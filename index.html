@@ -497,8 +497,18 @@ function calc() {
     '<div class="mc ' + scClass + '"><div class="v">' + conCush.toFixed(2) + '%</div><div class="l">安全垫(保守)</div></div>' +
     '<div class="mc mc-y"><div class="v">' + conCush.toFixed(2) + '%</div><div class="l">盈亏平衡点</div></div>';
 
-  if (regDateStr) {
-    grid.innerHTML += '<div class="adbox" style="background:#e8f0fe;border:1px solid #1a73e8;color:#1a73e8;font-size:12px;padding:8px;margin-top:6px">📅 同意注册日期：<strong>' + regDateStr + '</strong>（距今约' + daysBetween(regDateStr, TODAY) + '天）</div>';
+  if (curData) {
+    var dateInfo = '';
+    var recDateStr = curData[6] || '';
+    if (regDateStr) {
+      dateInfo += '📅 同意注册：<strong>' + regDateStr + '</strong>（距今约' + daysBetween(regDateStr, TODAY) + '天）';
+    }
+    if (recDateStr) {
+      dateInfo += (dateInfo ? ' | ' : '') + '📋 股权登记：<strong>' + recDateStr + '</strong>';
+    }
+    if (dateInfo) {
+      grid.innerHTML += '<div class="adbox" style="background:#e8f0fe;border:1px solid #1a73e8;color:#1a73e8;font-size:12px;padding:8px;margin-top:6px">' + dateInfo + '</div>';
+    }
   }
 
   if (hasAdv) {
@@ -631,8 +641,14 @@ function calc() {
     stepsHtml += '<p>④\' <strong>激进版</strong>：持股' + aggSh + '股(卡0.5手)，投入¥' + aggCost.toFixed(0) + '，安全垫' + aggCush.toFixed(2) + '%</p>';
   }
 
-  if (regDateStr) {
-    stepsHtml += '<p>📅 <strong>同意注册日期</strong>：' + regDateStr + '（距今约' + daysBetween(regDateStr, TODAY) + '天）</p>';
+  if (curData) {
+    var recDateInfo = curData[6] || '';
+    if (regDateStr) {
+      stepsHtml += '<p>📅 <strong>同意注册日期</strong>：' + regDateStr + '（距今约' + daysBetween(regDateStr, TODAY) + '天）</p>';
+    }
+    if (recDateInfo) {
+      stepsHtml += '<p>📋 <strong>股权登记日</strong>：' + recDateInfo + '</p>';
+    }
   }
 
   stepsHtml +=
