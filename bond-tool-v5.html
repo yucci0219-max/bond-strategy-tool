@@ -112,7 +112,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div>
 <div class="cd" id="rCard" style="display:none"><h2>📊 分析结果</h2><div class="mg" id="mGrid"></div><div id="rBadge" style="margin:6px 0"></div></div>
 <div class="cd" id="cCard" style="display:none"><h2>📈 情景分析图</h2><canvas id="sChart" height="260"></canvas></div>
-<div class="cd" id="tCard" style="display:none"><h2>📋 情景明细</h2><div style="overflow-x:auto"><table class="st" id="sTbl"><thead><tr><th>正股跌幅</th><th>正股亏损</th><th>转债收益</th><th>综合收益</th><th>收益率</th><th>盈亏</th></tr></thead><tbody id="sBody"></tbody></table></div></div>
+<div class="cd" id="tCard" style="display:none"><h2>📋 情景明细</h2><div style="overflow-x:auto"><table class="st" id="sTbl"><thead><tr><th>正股变动</th><th>正股盈亏</th><th>转债收益</th><th>综合收益</th><th>收益率</th><th>盈亏</th></tr></thead><tbody id="sBody"></tbody></table></div></div>
 <div class="cd" id="bCard" style="display:none"><h2>🧮 计算过程</h2><div id="bSteps" style="font-size:13px;line-height:2;color:#3c4043"></div></div>
 </div>
 
@@ -438,7 +438,7 @@ function calc() {
     var tL = s.tp >= 0 ? 'pf' : 'lf';
     var tRL = s.tr >= 0 ? 'pf' : 'lf';
     tblHtml += '<tr>';
-    tblHtml += '<td>' + s.dr + '%</td>';
+    tblHtml += '<td>' + (s.dr > 0 ? '跌' : s.dr < 0 ? '涨' : '平') + Math.abs(s.dr) + '%</td>';
     tblHtml += '<td class="' + cL + '">' + s.sl.toFixed(0) + '</td>';
     tblHtml += '<td class="pf">' + s.bp.toFixed(0) + '</td>';
     tblHtml += '<td class="' + tL + '">' + s.tp.toFixed(0) + '</td>';
@@ -457,7 +457,7 @@ function calc() {
   var tpData = [];
   var ptColors = [];
   for (var k = 0; k < scs.length; k++) {
-    labels.push('跌' + Math.abs(scs[k].dr) + '%');
+    labels.push((scs[k].dr > 0 ? '跌' : scs[k].dr < 0 ? '涨' : '平') + Math.abs(scs[k].dr) + '%');
     slData.push(scs[k].sl);
     bpData.push(scs[k].bp);
     tpData.push(scs[k].tp);
