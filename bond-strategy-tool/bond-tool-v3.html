@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抢权配债策略分析工具 v2.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg: #f0f2f5; --card: #ffffff; --primary: #1a73e8; --success: #34a853;
+    --danger: #ea4335; --warn: #fbbc04; --text: #202124; --sub: #5f6368;
+    --border: #e0e0e0; --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  .header { background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: white; padding: 28px 32px; }
+  .header h1 { font-size: 24px; font-weight: 700; }
+  .header p  { font-size: 14px; opacity: 0.85; margin-top: 4px; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .grid2 { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+  @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border-radius: var(--radius);
+           box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 24px; margin-bottom: 24px; }
+  .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px;
+              padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: var(--sub); margin-bottom: 4px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+  .form-row { display: flex; gap: 10px; }
+  .form-row > * { flex: 1; }
+  .btn {
+    display: inline-block; padding: 10px 20px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; text-align: center;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #1557b0; }
+  .btn-secondary { background: #e8f0fe; color: var(--primary); font-size: 12px; padding: 6px 12px; width: auto; }
+  .btn-secondary:hover { background: #d2e3fc; }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                  gap: 12px; margin: 16px 0; }
+  .metric-card { background: #f8f9fa; border-radius: 10px; padding: 14px; text-align: center; }
+  .metric-card .val { font-size: 22px; font-weight: 700; }
+  .metric-card .lbl { font-size: 12px; color: var(--sub); margin-top: 2px; }
+  .metric-card.green  { border-left: 4px solid var(--success); }
+  .metric-card.red    { border-left: 4px solid var(--danger); }
+  .metric-card.blue   { border-left: 4px solid var(--primary); }
+  .metric-card.yellow { border-left: 4px solid var(--warn); }
+
+  .scenario-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .scenario-table th { background: #f1f3f4; padding: 8px 10px; text-align: center;
+                         font-weight: 600; color: var(--sub); }
+  .scenario-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--border); }
+  .scenario-table tr:hover td { background: #f8f9fa; }
+  .profit  { color: var(--success); font-weight: 600; }
+  .loss    { color: var(--danger);  font-weight: 600; }
+
+  .badge {
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-size: 13px; font-weight: 600;
+  }
+  .badge-high   { background: #e6f4ea; color: #137333; }
+  .badge-mid    { background: #fef7e0; color: #b06000; }
+  .badge-low    { background: #fce8e6; color: #c5221f; }
+  .badge-unknown{ background: #f1f3f4; color: var(--sub); }
+
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px;
+    width: 2px; background: var(--primary); opacity: 0.3;
+  }
+  .timeline-item { position: relative; margin-bottom: 18px; }
+  .timeline-dot {
+    position: absolute; left: -24px; top: 4px; width: 12px; height: 12px;
+    background: var(--primary); border-radius: 50%; border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+  .timeline-item h4 { font-size: 14px; font-weight: 600; }
+  .timeline-item p  { font-size: 13px; color: var(--sub); margin-top: 2px; }
+  .timeline-item .action { font-size: 12px; color: var(--primary); margin-top: 4px; }
+
+  .watchlist-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .watchlist-table th { background: #f1f3f4; padding: 8px 10px; text-align: left; font-weight: 600; color: var(--sub); }
+  .watchlist-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .watchlist-table tr:hover td { background: #f8f9fa; cursor: pointer; }
+
+  .disclaimer { font-size: 12px; color: #9aa0a6; padding: 16px;
+                 border-top: 1px solid var(--border); margin-top: 24px; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ 抢权配债策略分析工具 v2.0</h1>
+  <p>实时待发转债数据(v2.0) · 安全垫计算器 · 情景分析 · 操作时机</p>
+</div>
+
+<div class="container">
+<div class="grid2">
+
+  <!-- Left Panel -->
+  <div>
+    <div class="card">
+      <h2>📋 配债数据输入</h2>
+      <div class="form-group">
+        <label>正股代码</label>
+        <input type="text" id="stockCode" value="600456" placeholder="如 600456">
+      </div>
+      <div class="form-group">
+        <label>正股名称</label>
+        <input type="text" id="stockName" value="宝钛股份" placeholder="如 宝钛股份">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>正股当前价（元）</label>
+          <input type="number" id="stockPrice" value="26.40" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>配售10张需持股（股）</label>
+          <input type="number" id="sharesPer10" value="135" step="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>股权登记日（真实公告日优先）</label>
+          <input type="date" id="recordDate" value="2026-06-23">
+        </div>
+        <div class="form-group">
+          <label>预估上市溢价率（%）</label>
+          <input type="number" id="estPremium" value="20" step="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>📅 预估登记日（预案用，无公告日时填此栏）</label>
+          <input type="date" id="estRecordDate" value="">
+        </div>
+        <div class="form-group">
+          <label>📅 预计申购日（自动=预估登记日+1）</label>
+          <input type="date" id="estApplyDate" value="">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:18px">
+        <button class="btn btn-primary" onclick="calculate()">🔍 开始分析（配1手最低）</button>
+      </div>
+      <p style="font-size:11px;color:#9aa0a6;margin-top:8px">
+        💡 默认按"配1手转债(10张)的最低持股量"计算，情景分析基于1手成本
+      </p>
+      <p style="font-size:11px;color:#9aa0a6;margin-top:4px">
+        💡 "配10张需持股"可在集思录待发转债页面查询，或点击下表自动加载
+      </p>
+    </div>
+
+    <!-- Watchlist: 真实待发转债 -->
+    <div class="card">
+      <h2>📌 集思录待发转债（点击加载）</h2>
+      <div style="font-size:12px;color:#9aa0a6;margin-bottom:10px">
+        数据来源: 集思录 | 更新: 2026-06-28
+      </div>
+      <div style="overflow-x:auto; max-height: 400px; overflow-y: auto;">
+        <table class="watchlist-table" id="watchlistTable">
+          <thead><tr><th>正股</th><th>股价</th><th>配10张需股</th><th>安全垫</th><th>评级</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px">
+        <button class="btn btn-secondary" onclick="loadRealData()">🔄 刷新真实数据</button>
+        <button class="btn btn-secondary" onclick="addToWatchlist()">+ 手动添加</button>
+        <button class="btn btn-secondary" onclick="showFlowHelp()">📅 发行流程</button>
+      </div>
+    </div>
+
+    <div class="card" id="flowHelpCard" style="display:none">
+      <h2>📅 可转债发行流程（时间节点参考）</h2>
+      <div style="font-size:13px;line-height:2;">
+        <p><strong>完整流程：</strong>董事会预案 → 股东大会通过 → 交易所/证监会受理 → 上市委通过 → <strong>证监会同意注册</strong>（⭐ 起点）→ 发行公告 → 股权登记日(T-1） → 申购日(T日） → 中签缴款(T+2） → 上市(T+15~25）</p>
+        <hr style="margin:10px 0;border:none;border-top:1px solid #e0e0e0;">
+        <p><strong>⭐ 同意注册 → 发行公告：</strong>一般 <strong>7~30天</strong>（上市公司自定窗口，注册批复12个月内有效）</p>
+        <p><strong>📋 发行公告 → 股权登记日：</strong>一般 <strong>1~3天</strong>（《发行公告》一次性公布登记日和申购日）</p>
+        <p><strong>⏰ 申购日 → 上市日：</strong>一般 <strong>15~25天</strong>（转债打新周期）</p>
+        <hr style="margin:10px 0;border:none;border-top:1px solid #e0e0e0;">
+        <p>📌 <strong>关键公告：《可转债发行公告》</strong>—— 盯此公告！它一次性公布"股权登记日、申购日、配售比例"三个核心数据。</p>
+        <p>📌 同意注册后，公司会发公告说"决定启动发行"，此后 <strong>1~3天内</strong>就会出《发行公告》—— 这就是你需要抢权的信号。</p>
+        <p style="color:#e8a000;font-size:12px;margin-top:8px;">💡 预案标的（未公布登记日）：可参考同行已发行案例，预估登记日大约在"同意注册后15天内"，填入"预估登记日"做预测分析。</p>
+      </div>
+    </div>
+
+    <!-- Timing -->
+    <div class="card">
+      <h2>⏰ 操作时机</h2>
+      <div class="timeline" id="timeline">
+        <p style="color:#9aa0a6;font-size:13px">点击"开始分析"后显示</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div>
+    <div class="card" id="resultCard" style="display:none">
+      <h2>📊 分析结果</h2>
+      <div class="metric-grid" id="metricGrid"></div>
+      <div id="ratingBadge" style="margin:8px 0 16px"></div>
+    </div>
+
+    <div class="card" id="chartCard" style="display:none">
+      <h2>📈 情景分析图</h2>
+      <canvas id="scenarioChart" height="260"></canvas>
+    </div>
+
+    <div class="card" id="tableCard" style="display:none">
+      <h2>📋 情景明细表</h2>
+      <div style="overflow-x:auto">
+        <table class="scenario-table" id="scenarioTable">
+          <thead><tr>
+            <th>正股跌幅</th><th>正股亏损(元)</th><th>转债收益(元)</th>
+            <th>综合收益(元)</th><th>收益率</th><th>盈亏</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="breakdownCard" style="display:none">
+      <h2>🧮 计算过程</h2>
+      <div id="calcSteps" style="font-size:13px;line-height:2;color:#3c4043"></div>
+    </div>
+  </div>
+
+</div><!-- /grid2 -->
+
+<div class="disclaimer">
+  ⚠️ <strong>免责声明</strong>：本工具仅供参考学习，不构成任何投资建议。抢权配债策略存在正股下跌风险，转债上市溢价率存在不确定性。投资有风险，决策需谨慎。<br>
+  数据来源: <a href="https://www.jisilu.cn/web/data/cb/pre" target="_blank">集思录待发转债</a>（2026-06-28抓取）。正股价格为当时市价，请使用前确认最新价格。
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ─────────────────────────────
+// 真实待发转债数据 (集思录 2026-06-28)
+// ─────────────────────────────
+const REAL_DATA = [
+  // ── 已公布登记日（可操作）─────────────────────
+  // [正股代码, 正股名, 转债名, 股价, 配10张需股数, 评级, 股权登记日, 申购日]
+  ["301215", "中汽股份", "中汽转债",   5.26, 1275, "AA+", "2026-06-10", "2026-06-10"],
+  ["688377", "迪威尔",   "迪威转债",  23.63,  258, "AA-", "2026-06-03", "2026-06-03"],
+  ["000422", "湖北宜化", "宜化转债",  13.26,  330, "AA+", "2026-06-25", "2026-06-25"],
+  ["301499", "维科精密", "维科转债",  29.90,  220, "A+",  "2026-06-25", "2026-06-25"],
+  ["605589", "圣泉集团", "圣泉转债",  66.71,  339, "AA+", "2026-06-24", "2026-06-24"],
+  ["688668", "鼎通科技", "鼎通转债", 376.01,  150, "A+",  "2026-06-23", "2026-06-23"],
+  ["600456", "宝钛股份", "宝钛转债",  26.40,  135, "AAA", "2026-06-23", "2026-06-23"],
+  ["688200", "华峰测控", "华峰转债", 469.10,  268, "AA",  "2026-06-22", "2026-06-22"],
+  ["688484", "南芯科技", "南芯转债",  50.26,  269, "AA+", "2026-06-17", "2026-06-17"],
+  ["301059", "金三江",   "三江转债",  11.18,  794, "A+",  "2026-06-16", "2026-06-16"],
+  ["603809", "豪能股份", "豪26转债",   8.64,  512, "AA-", "2026-06-12", "2026-06-12"],
+  ["603270", "金帝股份", "金帝转债",  31.59,  226, "AA",  "2026-06-12", "2026-06-12"],
+  ["688092", "爱科科技", "爱科转债",  21.20,  310, "AA-", "2026-06-10", "2026-06-10"],
+  ["603129", "春风动力", "春风转债", 244.00,   71, "AA+", "2026-06-09", "2026-06-09"],
+  ["603112", "华翔股份", "翔26转债",  17.03,  416, "AA-", "2026-06-05", "2026-06-05"],
+  // ── 未公布登记日（预案，关注公告）───────────────
+  ["688278", "特宝生物", "待定",  52.93,  267, "-",  "", ""],
+  ["301000", "肇民科技", "待定",  30.88,  413, "-",  "", ""],
+  ["600389", "江山股份", "待定",  19.78,  364, "-",  "", ""],
+  ["300453", "三鑫医疗", "待定",   8.91,  986, "-",  "", ""],
+  ["603339", "四方科技", "待定",  14.26,  303, "-",  "", ""],
+  ["603786", "科博达",   "待定",  41.15,  271, "-",  "", ""],
+  ["300815", "玉禾田",   "待定",  16.67,  266, "-",  "", ""],
+  ["002913", "奥士康",   "待定",  63.96,  318, "-",  "", ""],
+  ["600642", "申能股份", "待定",   8.63, 2445, "-",  "", ""],
+  ["000887", "中鼎股份", "待定",  17.35,  686, "-",  "", ""],
+  ["002997", "瑞鹄模具", "待定",  28.26,  306, "-",  "", ""],
+  ["300953", "震裕科技", "待定", 128.20,  130, "-",  "", ""],
+  ["603163", "圣晖集成", "待定", 135.58,  182, "-",  "", ""],
+  ["301132", "满坤科技", "待定",  55.20,  195, "-",  "", ""],
+  ["605123", "派克新材", "待定",  95.05,   77, "-",  "", ""],
+  ["301628", "强达电路", "待定", 108.12,  138, "-",  "", ""],
+  ["301459", "丰茂股份", "待定",  31.30,  172, "-",  "", ""],
+  ["301565", "中仑新材", "待定",  24.11,  375, "-",  "", ""],
+  ["002550", "千红制药", "待定",   5.98, 1280, "-",  "", ""],
+  ["300631", "久吾高科", "待定",  23.20,  417, "-",  "", ""],
+  ["688605", "先锋精科", "待定",  99.00,  271, "-",  "", ""],
+  ["603067", "振华股份", "待定",  42.74,  861, "-",  "", ""],
+  ["688480", "赛恩斯",   "待定",  89.69,  169, "-",  "", ""],
+  ["688686", "奥普特",   "待定", 154.20,   97, "-",  "", ""]
+];
+
+// ─────────────────────────────
+// 渲染关注列表
+// ─────────────────────────────
+function renderWatchlist() {
+  const tbody = document.querySelector('#watchlistTable tbody');
+
+  // 分成两组：有登记日的 + 预案（无登记日）
+  const withDate  = REAL_DATA.filter(d => d[6]);
+  const noDate    = REAL_DATA.filter(d => !d[6]);
+
+  // 分别按安全垫排序
+  const sortFn = (a, b) => {
+    const ca = calcCushionOnly(a[3], a[4]);
+    const cb = calcCushionOnly(b[3], b[4]);
+    return cb - ca;  // 降序
+  };
+  withDate.sort(sortFn);
+  noDate.sort(sortFn);
+
+  let html = '';
+
+  // 第一组：可操作
+  if (withDate.length > 0) {
+    html += '<tr><td colspan="5" style="background:#e8f0fe;font-weight:600;font-size:12px;color:#1a73e8;padding:6px 10px;">⚡ 可操作（已公布登记日）</td></tr>';
+    html += withDate.map(d => {
+      const cushion = calcCushionOnly(d[3], d[4]);
+      const color = cushion >= 5 ? '#34a853' : cushion >= 3 ? '#e8a000' : cushion >= 1.5 ? '#ea4335' : '#9aa0a6';
+      return `<tr onclick="loadReal('${d[0]}')" style="cursor:pointer">
+        <td>${d[1]}</td>
+        <td>${d[3].toFixed(2)}</td>
+        <td>${d[4]}</td>
+        <td style="color:${color};font-weight:700">${cushion.toFixed(2)}%</td>
+        <td>${d[5]}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // 第二组：预案
+  if (noDate.length > 0) {
+    html += '<tr><td colspan="5" style="background:#f1f3f4;font-weight:600;font-size:12px;color:#5f6368;padding:6px 10px;">📋 预案（未公布登记日，关注公告）</td></tr>';
+    html += noDate.map(d => {
+      const cushion = calcCushionOnly(d[3], d[4]);
+      const color = cushion >= 5 ? '#34a853' : cushion >= 3 ? '#e8a000' : cushion >= 1.5 ? '#ea4335' : '#9aa0a6';
+      return `<tr onclick="loadReal('${d[0]}')" style="cursor:pointer;opacity:0.85;">
+        <td>${d[1]}</td>
+        <td>${d[3].toFixed(2)}</td>
+        <td>${d[4]}</td>
+        <td style="color:${color};font-weight:700">${cushion.toFixed(2)}%</td>
+        <td>${d[5]}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  tbody.innerHTML = html;
+}
+
+function calcCushionOnly(stockPrice, sharesPer10, premiumPct) {
+  premiumPct = premiumPct || 20;
+  if (stockPrice <= 0 || sharesPer10 <= 0) return 0;
+  const allotment = 1000.0 / sharesPer10;
+  const hundredRights = (100.0 / stockPrice) * allotment;  // 百元含权
+  return hundredRights * (premiumPct / 100.0);  // 安全垫(%)
+}
+
+function loadReal(code) {
+  const d = REAL_DATA.find(x => x[0] === code);
+  if (!d) return;
+  document.getElementById('stockCode').value    = d[0];
+  document.getElementById('stockName').value    = d[1];
+  document.getElementById('stockPrice').value   = d[3];
+  document.getElementById('sharesPer10').value = d[4];
+  document.getElementById('estRecordDate').value = "";
+  document.getElementById('estApplyDate').value  = "";
+
+  // 有真实登记日：填入并直接分析
+  if (d[6]) {
+    document.getElementById('recordDate').value = d[6];
+    calculate();
+  } else {
+    // 预案：留空登记日，提示用户填预估日
+    document.getElementById('recordDate').value = "";
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('chartCard').style.display  = 'none';
+    document.getElementById('tableCard').style.display  = 'none';
+    document.getElementById('breakdownCard').style.display = 'none';
+    document.getElementById('timeline').innerHTML =
+      '<p style="color:#e8a000;font-size:13px;font-weight:600;">' +
+      '⚠️ 此为预案标的，尚未公布股权登记日</p>' +
+      '<p style="color:#5f6368;font-size:13px;margin-top:4px;">' +
+      '请在左侧"预估登记日"栏填写预测日期，然后点击"开始分析"查看操作时机预测。</p>';
+  }
+}
+
+function showFlowHelp() {
+  const card = document.getElementById('flowHelpCard');
+  if (card.style.display === 'none') {
+    card.style.display = '';
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+function loadRealData() {
+  renderWatchlist();
+  alert('已刷新集思录待发转债数据（共' + REAL_DATA.length + '只）\n\n点击上方表格中任意行可加载分析。');
+}
+
+function addToWatchlist() {
+  const code   = document.getElementById('stockCode').value.trim();
+  const name   = document.getElementById('stockName').value.trim();
+  const price  = parseFloat(document.getElementById('stockPrice').value) || 0;
+  const shares = parseInt(document.getElementById('sharesPer10').value) || 0;
+  if (!code || price <= 0) { alert('请先输入完整的配债数据'); return; }
+  if (REAL_DATA.find(d => d[0] === code)) {
+    alert('已在列表中'); return;
+  }
+  REAL_DATA.push([code, name, '', price, shares, '-', '', '']);
+  renderWatchlist();
+}
+
+// ─────────────────────────────
+// 核心计算
+// ─────────────────────────────
+let scenarioChart = null;
+
+function calculate() {
+  const code       = document.getElementById('stockCode').value.trim();
+  const name       = document.getElementById('stockName').value.trim();
+  const price      = parseFloat(document.getElementById('stockPrice').value) || 0;
+  const sharesP10  = parseInt(document.getElementById('sharesPer10').value) || 0;
+  const premium    = parseFloat(document.getElementById('estPremium').value) || 20;
+  // 优先用真实登记日，没有则取"预估登记日"
+  const recDateReal  = document.getElementById('recordDate').value;
+  const recDateEst   = document.getElementById('estRecordDate').value;
+  const recDate        = recDateReal || recDateEst || "";
+  const isEstimate     = !recDateReal && !!recDateEst;  // 是否用预估日期
+
+  if (price <= 0 || sharesP10 <= 0) {
+    alert('请输入有效的正股价和"配售10张所需股数"');
+    return;
+  }
+
+  // ── 核心计算（配1手最低，含取整规则）──
+  // 每股配债额(元面值) = 1000 / 配10张所需股数
+  const allotment = 1000.0 / sharesP10;
+
+  // 判断交易所：代码6开头=沪市，0/3开头=深市
+  const isSH = code.startsWith('6');  // 沪市
+
+  // ── 配1手转债的持股计算 ──
+  // 沪市：最小单位1手(10张)，取整规则"精确算法"≈四舍五入
+  //   激进模式：卡0.5手，买 sharesP10*0.5 股可能获配1手
+  //   保守模式：买 sharesP10 股确保获配1手
+  // 深市：最小单位1张(100元)，取整影响极小
+  //   直接按 sharesP10 股计算（精确到张）
+
+  // 激进版持股数（利用精确算法进位）
+  const aggressiveShares = isSH
+    ? Math.ceil(sharesP10 * 0.5 / 100) * 100   // 沪市：0.5手取整百股
+    : Math.ceil(sharesP10 / 100) * 100;          // 深市：同保守版
+
+  // 保守版持股数（确保1手）
+  const conservativeShares = Math.ceil(sharesP10 / 100) * 100;
+
+  // 默认用保守版（安全），同时展示激进版对比
+  const minShares = conservativeShares;
+  const minCost   = minShares * price;
+
+  // 激进版数据
+  const aggressiveCost = aggressiveShares * price;
+
+  // 百元含权 = (100 / 股价) × 每股配债额
+  const hundredRights = (100.0 / price) * allotment;
+
+  // 预估转债价格和收益
+  const expectedPrice = 100.0 + premium;
+  const bondProfit1Hand = 10.0 * (expectedPrice - 100.0);  // 1手转债收益(元)
+
+  // 安全垫(%) = 百元含权 × (溢价率/100)
+  const safetyCushion = hundredRights * (premium / 100.0);
+
+  // 激进版安全垫（更高，因为投入更少）
+  const aggressiveCushion = aggressiveCost > 0
+    ? (bondProfit1Hand / aggressiveCost) * 100
+    : 0;
+
+  // 是否有取整优势（激进版持股数 < 保守版）
+  const hasRoundingAdvantage = aggressiveShares < conservativeShares;
+
+  // ── 渲染指标 ──
+  document.getElementById('resultCard').style.display = '';
+  document.getElementById('chartCard').style.display = '';
+  document.getElementById('tableCard').style.display = '';
+  document.getElementById('breakdownCard').style.display = '';
+
+  const grid = document.getElementById('metricGrid');
+  grid.innerHTML = `
+    <div class="metric-card blue"><div class="val">${minShares}</div><div class="lbl">保守版持股数</div></div>
+    <div class="metric-card blue"><div class="val">¥${minCost.toFixed(0)}</div><div class="lbl">保守版投入</div></div>
+    <div class="metric-card blue"><div class="val">1手(10张)</div><div class="lbl">可配转债(保守)</div></div>
+    <div class="metric-card green"><div class="val">¥${bondProfit1Hand.toFixed(0)}</div><div class="lbl">1手转债收益</div></div>
+    <div class="metric-card ${safetyCushion >= 3 ? 'green' : safetyCushion >= 1.5 ? 'yellow' : 'red'}">
+      <div class="val">${safetyCushion.toFixed(2)}%</div><div class="lbl">安全垫(保守)</div></div>
+    <div class="metric-card yellow"><div class="val">${safetyCushion.toFixed(2)}%</div><div class="lbl">盈亏平衡点</div></div>
+  `;
+
+  // 如果有取整优势，额外展示激进版对比
+  if (hasRoundingAdvantage && isSH) {
+    grid.innerHTML += `
+      <div style="margin-top:12px;padding:12px;background:#fef7e0;border-radius:10px;font-size:13px;">
+        <strong>⚡ 沪市取整进位策略（激进版）</strong><br>
+        持股 <strong>${aggressiveShares}股</strong>（卡0.5手），投入 <strong>¥${aggressiveCost.toFixed(0)}</strong><br>
+        激进安全垫 <strong>${aggressiveCushion.toFixed(2)}%</strong>（vs 保守${safetyCushion.toFixed(2)}%）<br>
+        ⚠️ 注意：0.5手进位为1手是<strong>大概率但非100%</strong>，余数相同的股东多时可能随机抽签落选
+      </div>
+    `;
+  }
+
+  // 评级
+  let ratingText, ratingClass;
+  if (safetyCushion >= 5) {
+    ratingText = '★★★★★ 高安全垫，积极参与'; ratingClass = 'badge-high';
+  } else if (safetyCushion >= 3) {
+    ratingText = '★★★★☆ 中等安全垫，可参与'; ratingClass = 'badge-mid';
+  } else if (safetyCushion >= 1.5) {
+    ratingText = '★★★☆☆ 安全垫偏低，谨慎'; ratingClass = 'badge-mid';
+  } else if (safetyCushion > 0) {
+    ratingText = '★★☆☆☆ 安全垫不足'; ratingClass = 'badge-low';
+  } else {
+    ratingText = '数据不足'; ratingClass = 'badge-unknown';
+  }
+  document.getElementById('ratingBadge').innerHTML =
+    `<span class="badge ${ratingClass}">${ratingText}</span>`;
+
+  // ── 情景分析（基于配1手的成本）──
+  const drops = [-2, -1, 0, 1, 2, 3, 5, 8, 10, 15, 20];
+  const scenarios = drops.map(drop => {
+    const stockLoss    = minCost * (drop / 100.0);       // 正股亏损
+    const totalProfit  = bondProfit1Hand + stockLoss;    // 综合收益
+    const totalReturn  = minCost > 0 ? (totalProfit / minCost) * 100.0 : 0;  // 收益率%
+    return { drop, stockLoss, bondProfit: bondProfit1Hand, totalProfit, totalReturn, profitable: totalProfit > 0 };
+  });
+
+  // 渲染表格
+  const tbody = document.querySelector('#scenarioTable tbody');
+  tbody.innerHTML = scenarios.map(s => `
+    <tr>
+      <td>${s.drop}%</td>
+      <td class="${s.stockLoss <= 0 ? 'loss' : 'profit'}">${s.stockLoss.toFixed(0)}</td>
+      <td class="profit">${s.bondProfit.toFixed(0)}</td>
+      <td class="${s.totalProfit >= 0 ? 'profit' : 'loss'}">${s.totalProfit.toFixed(0)}</td>
+      <td class="${s.totalReturn >= 0 ? 'profit' : 'loss'}">${s.totalReturn.toFixed(2)}%</td>
+      <td>${s.profitable ? '✅' : '❌'}</td>
+    </tr>
+  `).join('');
+
+  // ── 图表 ──
+  const ctx = document.getElementById('scenarioChart').getContext('2d');
+  if (scenarioChart) scenarioChart.destroy();
+  scenarioChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: scenarios.map(s => `跌${Math.abs(s.drop)}%`),
+      datasets: [
+        {
+          label: '正股亏损',
+          data: scenarios.map(s => s.stockLoss),
+          backgroundColor: 'rgba(234,67,53,0.7)',
+          borderRadius: 4,
+        },
+        {
+          label: '转债收益',
+          data: scenarios.map(s => s.bondProfit),
+          backgroundColor: 'rgba(52,168,83,0.7)',
+          borderRadius: 4,
+        },
+        {
+          label: '综合收益',
+          data: scenarios.map(s => s.totalProfit),
+          type: 'line',
+          borderColor: '#1a73e8',
+          backgroundColor: 'rgba(26,115,232,0.1)',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: scenarios.map(s => s.profitable ? '#34a853' : '#ea4335'),
+          order: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ¥${ctx.parsed.y.toFixed(0)}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          title: { display: true, text: '收益（元）', font: { size: 12 } },
+          grid: { color: '#f0f0f0' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ── 计算过程 ──
+  const exchangeName = isSH ? '沪市(上交所)' : '深市(深交所)';
+  const roundingNote = isSH
+    ? `<p>⭐ <strong>沪市取整规则</strong>：配售最小单位1手(10张)。不足1手部分按"精确算法"≈四舍五入进位。持股${aggressiveShares}股可卡0.5手，<strong>大概率</strong>进位获配1手（但非100%保证）。</p>`
+    : `<p>⭐ <strong>深市取整规则</strong>：配售最小单位1张(100元)。取整影响极小，基本精确配售。</p>`;
+
+  document.getElementById('calcSteps').innerHTML = `
+    <p>① <strong>每股配债额</strong> = 1000 ÷ ${sharesP10} = <strong>${allotment.toFixed(4)} 元面值/股</strong></p>
+    <p>② <strong>交易所</strong>：${exchangeName}，配售最小单位：${isSH ? '1手(10张=1000元)' : '1张(100元)'}</p>
+    <p>③ <strong>百元含权</strong> = (100 ÷ ${price.toFixed(2)}) × ${allotment.toFixed(4)} = <strong>${hundredRights.toFixed(2)} 元面值</strong></p>
+    <p>④ <strong>安全垫</strong> = ${hundredRights.toFixed(2)} × ${premium}% ÷ 100 = <strong>${safetyCushion.toFixed(2)}%</strong></p>
+    <p>⑤ <strong>保守版</strong>：持股${minShares}股(确保1手)，投入¥${minCost.toFixed(0)}，安全垫${safetyCushion.toFixed(2)}%</p>
+    ${hasRoundingAdvantage && isSH ? `<p>⑤<strong>激进版</strong>：持股${aggressiveShares}股(卡0.5手)，投入¥${aggressiveCost.toFixed(0)}，安全垫${aggressiveCushion.toFixed(2)}%</p>` : ''}
+    <p>⑥ <strong>盈亏平衡点</strong>：正股跌幅 ≤ ${safetyCushion.toFixed(2)}%（保守版）时策略盈利</p>
+    <p>⑦ <strong>1手转债收益</strong>：10张 × (${expectedPrice.toFixed(0)} - 100) = <strong>¥${bondProfit1Hand.toFixed(0)}</strong></p>
+    ${roundingNote}
+  `;
+
+  // ── 时间线 ──
+  const timelineEl = document.getElementById('timeline');
+  if (recDate) {
+    const rec    = new Date(recDate);
+    const fmt    = d => d.toISOString().slice(0, 10);
+    const recStr   = fmt(rec);
+    const early5  = fmt(new Date(rec.getTime() - 5 * 86400000));
+    const tplus1 = fmt(new Date(rec.getTime() + 1 * 86400000));
+    const listingEst = fmt(new Date(rec.getTime() + 21 * 86400000));
+
+    const estBadge = isEstimate
+      ? ' <span style="color:#e8a000;font-size:12px;">⚠️ 以下为预测时间，实际以公告为准</span>'
+      : '';
+
+    timelineEl.innerHTML = `
+      <div style="margin-bottom:8px;${isEstimate ? 'color:#e8a000;font-weight:600;font-size:13px;' : ''}">
+        ${isEstimate ? '⚠️ 当前为预案预测模式，登记日尚未公告' : ''}
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="${isEstimate ? 'background:#e8a000;' : ''}"></div>
+        <h4>抢权窗口（${early5} ~ ${recStr}）${estBadge}</h4>
+        <p>逐步建仓，避免单日大量买入推高成本。正股可能因抢权资金而上涨。</p>
+        <div class="action">💡 操作：分批买入，T-2或T-3日完成建仓</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="${isEstimate ? 'background:#e8a000;' : ''}"></div>
+        <h4>股权登记日（${recStr}）${isEstimate ? ' ⚠️预测' : ''}</h4>
+        <p>收盘必须持仓，晚间清算后获得配债权。当日尾盘可能有跳水风险。</p>
+        <div class="action">💡 操作：持仓过夜，确保获得配债权</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="${isEstimate ? 'background:#e8a000;' : ''}"></div>
+        <h4>除权日（${tplus1}）${isEstimate ? ' ⚠️预测' : ''}</h4>
+        <p>已获配债权，正股可卖出。通常有抛压，可能低开。</p>
+        <div class="action">💡 操作：卖出正股 + 申购/缴款转债</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="${isEstimate ? 'background:#e8a000;' : ''}"></div>
+        <h4>转债上市日（预计 ${listingEst}）${isEstimate ? ' ⚠️预测' : ''}</h4>
+        <p>申购后2~4周上市，上市首日卖出转债完成策略闭环。</p>
+        <div class="action">💡 操作：上市首日集合竞价或开盘卖出转债</div>
+      </div>
+    `;
+  } else {
+    timelineEl.innerHTML = '<p style="color:#9aa0a6;font-size:13px;">⚠️ 请填写"预估登记日"或等待公告后，才能查看操作时机</p>';
+  }
+}
+
+// ── 初始化 ──
+renderWatchlist();
+calculate();
+</script>
+</body>
+</html>

@@ -736,10 +736,55 @@ function exportCSV() {
     '保守版持股数','保守版投入(元)','保守版安全垫(%)',
     '激进版持股数','激进版投入(元)','激进版安全垫(%)','有取整优势',
     '同意注册日期','股权登记日','申购日',
-    '登记日次日开盘涨幅(%)','登记日次日最低涨幅(%)','登记日次日收盘涨幅(%)'
+    '登记日次日开盘涨幅(%)','登记日次日最低涨幅(%)','登记日次日收盘涨幅(%)',
+    '上次正股价','上次安全垫(保守%)','上次状态','首次录入日期','最近更新日期'
   ];
 
+  // 1) 读取历史CSV数据
+  var oldCsv = localStorage.getItem('bondCsvData') || '';
+  var oldMap = {};   // code → {idx, rowArray}
+  var oldHeaders = [];
+  if (oldCsv) {
+    var oldLines = oldCsv.split('\n');
+    if (oldLines.length > 0) {
+      // 解析旧表头
+      var firstLine = oldLines[0].replace(/^\uFEFF/, '');
+      oldHeaders = firstLine.split(',');
+      // 找到关键列的索引
+      var codeIdx = oldHeaders.indexOf('正股代码');
+      var priceIdx = oldHeaders.indexOf('上次正股价');
+      var cushIdx  = oldHeaders.indexOf('上次安全垫(保守%)');
+      var statIdx  = oldHeaders.indexOf('上次状态');
+      var firstIdx = oldHeaders.indexOf('首次录入日期');
+      var lastIdx  = oldHeaders.indexOf('最近更新日期');
+      var curPriceIdx = oldHeaders.indexOf('正股价');
+      var curCushIdx  = oldHeaders.indexOf('保守版安全垫(%)');
+      var curStatIdx  = oldHeaders.indexOf('状态');
+
+      for (var k = 1; k < oldLines.length; k++) {
+        if (!oldLines[k].trim()) continue;
+        var cols = oldLines[k].split(',');
+        if (codeIdx >= 0 && cols[codeIdx]) {
+          var rec = {};
+          // 保存上次快照值：优先用"上次"列，若不存在则用"当前"列
+          rec.prevPrice = (priceIdx >= 0 && cols[priceIdx]) ? cols[priceIdx]
+                        : (curPriceIdx >= 0 && cols[curPriceIdx]) ? cols[curPriceIdx] : '';
+          rec.prevCush  = (cushIdx >= 0 && cols[cushIdx]) ? cols[cushIdx]
+                        : (curCushIdx >= 0 && cols[curCushIdx]) ? cols[curCushIdx] : '';
+          rec.prevStat  = (statIdx >= 0 && cols[statIdx]) ? cols[statIdx]
+                        : (curStatIdx >= 0 && cols[curStatIdx]) ? cols[curStatIdx] : '';
+          rec.firstDate = (firstIdx >= 0 && cols[firstIdx]) ? cols[firstIdx] : '';
+          rec.lastDate  = (lastIdx >= 0 && cols[lastIdx]) ? cols[lastIdx] : '';
+          oldMap[cols[codeIdx]] = rec;
+        }
+      }
+    }
+  }
+
+  // 2) 构建新数据行
   var rows = [];
+  var addedCount = 0, updatedCount = 0;
+
   for (var i = 0; i < DATA.length; i++) {
     var d = DATA[i];
     var code = d[0], name = d[1], bname = d[2], price = d[3], shares = d[4];
@@ -768,6 +813,25 @@ function exportCSV() {
     var nLow = bt ? bt.lowPct : '';
     var nClose = bt ? bt.closePct : '';
 
+    // 增量字段
+    var oldRec = oldMap[code];
+    var prevPrice, prevCush, prevStat, firstDate;
+    if (oldRec) {
+      // 已有记录：上次值=旧记录的当前值，首次日期不变
+      prevPrice = oldRec.prevPrice;
+      prevCush  = oldRec.prevCush;
+      prevStat  = oldRec.prevStat;
+      firstDate = oldRec.firstDate || TODAY;
+      updatedCount++;
+    } else {
+      // 新增记录：上次值为空，首次日期=今天
+      prevPrice = '';
+      prevCush  = '';
+      prevStat  = '';
+      firstDate = TODAY;
+      addedCount++;
+    }
+
     rows.push([
       code, name, bname, status, isSH ? '沪市' : '深市',
       price, shares, rating, allot.toFixed(4), hundR.toFixed(2),
@@ -775,17 +839,43 @@ function exportCSV() {
       aggSh, aggCost.toFixed(2), aggCush.toFixed(2),
       hasAdv ? '是' : '否',
       reg, rec, applyDt,
-      nOpen, nLow, nClose
+      nOpen, nLow, nClose,
+      prevPrice, prevCush, prevStat, firstDate, TODAY
     ]);
   }
 
-  // 生成CSV（UTF-8 BOM + 逗号分隔）
+  // 3) 处理已不在当前DATA中的旧记录（退市/强赎等）
+  var removedCount = 0;
+  for (var oldCode in oldMap) {
+    var found = false;
+    for (var m = 0; m < DATA.length; m++) {
+      if (DATA[m][0] === oldCode) { found = true; break; }
+    }
+    if (!found) {
+      var or = oldMap[oldCode];
+      rows.push([
+        oldCode, '', '', '已退市/强赎', '',
+        '', '', '', '', '',
+        '', '', '',
+        '', '', '', '',
+        '', '', '',
+        '', '', '',
+        or.prevPrice, or.prevCush, '已退市/强赎', or.firstDate, TODAY
+      ]);
+      removedCount++;
+    }
+  }
+
+  // 4) 生成CSV（UTF-8 BOM + 逗号分隔）
   var csv = '\uFEFF' + headers.join(',') + '\n';
   for (var j = 0; j < rows.length; j++) {
     csv += rows[j].join(',') + '\n';
   }
 
-  // 下载
+  // 5) 保存到localStorage供下次增量更新
+  localStorage.setItem('bondCsvData', csv);
+
+  // 6) 下载
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
@@ -793,6 +883,9 @@ function exportCSV() {
   a.download = 'bond-data-' + TODAY + '.csv';
   a.click();
   URL.revokeObjectURL(url);
+
+  // 7) 提示
+  alert('CSV导出完成！\n新增记录: ' + addedCount + '条\n更新记录: ' + updatedCount + '条\n移除记录: ' + removedCount + '条\n\n历史数据已保存，下次导出将自动增量更新。');
 }
 
 // ═════════════════════════════════════
