@@ -71,7 +71,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="fg"><label>📅 预估登记日（预案用）</label><input type="date" id="iEstRec" value=""></div>
 <div class="fg"><label>预估申购日（=登记日+1）</label><input type="date" id="iEstApply" value=""></div>
 </div>
-<div style="margin-top:16px"><button class="bt bt-p" id="calcBtn">🔍 开始分析（配1手最低）</button></div>
+<div id="premRef" style="margin-top:8px;padding:8px 10px;background:#e8f0fe;border-radius:7px;font-size:12px;color:#1a73e8;line-height:1.6"></div>
+<div style="margin-top:12px"><button class="bt bt-p" id="calcBtn">🔍 开始分析（配1手最低）</button></div>
 <p style="font-size:11px;color:#9aa0a6;margin-top:6px">💡 保守版=确保配1手 | 激进版=卡0.5手取整进位（仅沪市）| 深市精确到张无取整问题</p>
 </div>
 
@@ -190,6 +191,61 @@ var BACKTEST = {
   "603129":{openPct:-2.73,lowPct:-5.62,closePct:-5.00},
   "603112":{openPct:-7.58,lowPct:-10.00,closePct:-10.00}
 };
+
+// 近月上市转债首日涨幅数据（东方财富K线，2026年上市）
+// 用于估算待发转债的上市溢价率
+var LISTED_PREMIUM = [
+  {date:"2026-01-05",name:"卓镁转债",close:72.3},
+  {date:"2026-01-05",name:"普联转债",close:68.3},
+  {date:"2026-01-05",name:"神宇转债",close:55.0},
+  {date:"2026-01-05",name:"鼎捷转债",close:67.5},
+  {date:"2026-01-05",name:"瑞可转债",close:77.4},
+  {date:"2026-01-05",name:"茂莱转债",close:139.8},
+  {date:"2026-01-05",name:"天准转债",close:71.4},
+  {date:"2026-01-05",name:"华辰转债",close:60.2},
+  {date:"2026-01-05",name:"伯25转债",close:45.0},
+  {date:"2026-01-05",name:"应流转债",close:101.1},
+  {date:"2026-01-05",name:"凯众转债",close:59.0},
+  {date:"2026-01-05",name:"金25转债",close:79.9},
+  {date:"2026-01-14",name:"金05转债",close:57.3},
+  {date:"2026-01-16",name:"双乐转债",close:57.3},
+  {date:"2026-01-28",name:"联瑞转债",close:57.3},
+  {date:"2026-01-30",name:"耐普转02",close:57.3},
+  {date:"2026-02-26",name:"艾为转债",close:57.3},
+  {date:"2026-03-12",name:"海天转债",close:47.6},
+  {date:"2026-03-20",name:"统联转债",close:31.2},
+  {date:"2026-03-26",name:"祥和转债",close:57.3},
+  {date:"2026-04-07",name:"博士转债",close:43.0},
+  {date:"2026-04-14",name:"上26转债",close:48.8},
+  {date:"2026-05-07",name:"本川转债",close:57.3},
+  {date:"2026-05-11",name:"金杨转债",close:57.3},
+  {date:"2026-05-11",name:"斯达转债",close:57.3},
+  {date:"2026-05-13",name:"珂玛转债",close:57.3},
+  {date:"2026-06-12",name:"盛德转债",close:57.3},
+  {date:"2026-06-17",name:"通合转债",close:57.3}
+];
+
+// 计算近月上市转债首日溢价率统计
+function calcPremiumStats() {
+  // 近一个月（5月28日后）
+  var recent = LISTED_PREMIUM.filter(function(b) { return b.date >= '2026-05-28'; });
+  // 全部2026年
+  var all = LISTED_PREMIUM;
+  
+  var avg = function(arr) {
+    if (arr.length === 0) return 0;
+    return arr.reduce(function(s, b) { return s + b.close; }, 0) / arr.length;
+  };
+  
+  return {
+    recentCount: recent.length,
+    recentAvg: avg(recent),
+    allCount: all.length,
+    allAvg: avg(all),
+    allMax: Math.max.apply(null, all.map(function(b) { return b.close; })),
+    allMin: Math.min.apply(null, all.map(function(b) { return b.close; }))
+  };
+}
 
 // 今天日期（用于判断登记日是否已过）
 var TODAY = '2026-06-28';
@@ -651,6 +707,19 @@ document.getElementById('flowBtn').addEventListener('click', function() {
 // ═════════════════════════════════════
 // 初始化
 // ═════════════════════════════════════
+
+// 填充溢价率参考信息
+var premStats = calcPremiumStats();
+var premRef = document.getElementById('premRef');
+premRef.innerHTML =
+  '📊 <strong>近月转债首日溢价参考</strong>（' + premStats.recentCount + '只近月样本）：<strong>' + premStats.recentAvg.toFixed(1) + '%</strong>' +
+  ' | 今年' + premStats.allCount + '只均值：<strong>' + premStats.allAvg.toFixed(1) + '%</strong>' +
+  '（区间' + premStats.allMin + '%~' + premStats.allMax + '%）' +
+  '<br>💡 当前默认溢价率已设为近月均值' + premStats.recentAvg.toFixed(0) + '%，可手动调整';
+
+// 将默认溢价率改为近月均值
+document.getElementById('iPremium').value = Math.round(premStats.recentAvg);
+
 renderWL();
 calc();
 </script>
