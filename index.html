@@ -476,7 +476,7 @@ function calc() {
     ];
     for (var i = 0; i < btScenarios.length; i++) {
       var bs = btScenarios[i];
-      var sl = -conCost * (bs.pct / 100);  // 正股盈亏
+      var sl = conCost * (bs.pct / 100);  // 正股盈亏：pct负=跌=亏损
       var tp = bp1 + sl;
       var tr = conCost > 0 ? (tp / conCost) * 100 : 0;
       scs.push({ label: bs.label, dr: bs.pct, sl: sl, bp: bp1, tp: tp, tr: tr, ok: tp > 0 });
@@ -582,11 +582,11 @@ function calc() {
 
   if (isBacktest) {
     stepsHtml += '<p style="color:#ea4335;font-weight:600">📊 <strong>实际回测</strong>（登记日' + curData[6] + '次日行情）：</p>';
-    stepsHtml += '<p>　开盘' + bt.openPct + '% → 正股盈亏¥' + (-conCost * bt.openPct / 100).toFixed(0) + '，综合¥' + (bp1 - conCost * bt.openPct / 100).toFixed(0) + '</p>';
-    stepsHtml += '<p>　最低' + bt.lowPct + '% → 正股盈亏¥' + (-conCost * bt.lowPct / 100).toFixed(0) + '，综合¥' + (bp1 - conCost * bt.lowPct / 100).toFixed(0) + '</p>';
-    stepsHtml += '<p>　收盘' + bt.closePct + '% → 正股盈亏¥' + (-conCost * bt.closePct / 100).toFixed(0) + '，综合¥' + (bp1 - conCost * bt.closePct / 100).toFixed(0) + '</p>';
+    stepsHtml += '<p>　开盘' + bt.openPct + '% → 正股盈亏¥' + (conCost * bt.openPct / 100).toFixed(0) + '，综合¥' + (bp1 + conCost * bt.openPct / 100).toFixed(0) + '</p>';
+    stepsHtml += '<p>　最低' + bt.lowPct + '% → 正股盈亏¥' + (conCost * bt.lowPct / 100).toFixed(0) + '，综合¥' + (bp1 + conCost * bt.lowPct / 100).toFixed(0) + '</p>';
+    stepsHtml += '<p>　收盘' + bt.closePct + '% → 正股盈亏¥' + (conCost * bt.closePct / 100).toFixed(0) + '，综合¥' + (bp1 + conCost * bt.closePct / 100).toFixed(0) + '</p>';
     var bestExit = Math.max(bt.openPct, bt.closePct);
-    stepsHtml += '<p>💡 <strong>最优卖出</strong>：' + (bestExit === bt.openPct ? '开盘' : '收盘') + '卖出，综合收益¥' + (bp1 - conCost * bestExit / 100).toFixed(0) + '</p>';
+    stepsHtml += '<p>💡 <strong>最优卖出</strong>：' + (bestExit === bt.openPct ? '开盘' : '收盘') + '卖出，综合收益¥' + (bp1 + conCost * bestExit / 100).toFixed(0) + '</p>';
   }
 
   stepsHtml += rndNote;
