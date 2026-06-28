@@ -81,7 +81,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div style="font-size:12px;color:#9aa0a6;margin-bottom:8px">数据: 集思录 2026-06-28 · 共39只 · 🔴=即将操作置顶</div>
 <div style="overflow-x:auto;max-height:460px;overflow-y:auto">
 <table class="wt" id="wlTbl">
-<thead><tr><th>状态</th><th>正股</th><th>股价</th><th>需股数</th><th>安全垫</th><th>注册日</th><th>评级</th></tr></thead>
+<thead><tr><th>状态</th><th>正股</th><th>股价</th><th>需股数</th><th>安全垫</th><th>日期</th><th>评级</th></tr></thead>
 <tbody id="wlBody"></tbody>
 </table>
 </div>
@@ -325,6 +325,7 @@ function renderWL() {
   // 🔴 第1组：即将操作（置顶标红）
   if (upcoming.length > 0) {
     html += '<tr><td colspan="7" style="background:#ea4335;color:#fff;font-weight:700;font-size:12px;padding:5px 6px">🔴 即将操作（已发公告，登记日未到）</td></tr>';
+    html += '<tr><th style="background:#fce8e6;font-size:11px;padding:4px 6px;text-align:left;color:#ea4335">状态</th><th style="background:#fce8e6;font-size:11px;padding:4px 6px;text-align:left;color:#ea4335">正股</th><th style="background:#fce8e6;font-size:11px;padding:4px 6px;text-align:left;color:#ea4335">股价</th><th style="background:#fce8e6;font-size:11px;padding:4px 6px;text-align:left;color:#ea4335">需股数</th><th style="background:#fce8e6;font-size:11px;padding:4px 6px;text-align:left;color:#ea4335">安全垫</th><th style="background:#fce8e6;font-size:11px;padding:4px 6px;text-align:left;color:#ea4335">登记日</th><th style="background:#fce8e6;font-size:11px;padding:4px 6px;text-align:left;color:#ea4335">评级</th></tr>';
     for (var j = 0; j < upcoming.length; j++) {
       var dd = upcoming[j];
       var cc = calcBestCushion(dd[0], dd[3], dd[4], 20);
@@ -335,7 +336,7 @@ function renderWL() {
       html += '<td>' + dd[3].toFixed(2) + '</td>';
       html += '<td>' + dd[4] + '</td>';
       html += '<td style="color:#ea4335;font-weight:700">' + cc.toFixed(2) + '%' + (isSH_dd ? '<sup style="font-size:9px">激</sup>' : '') + '</td>';
-      html += '<td>' + fmtShortDate(dd[8]) + '</td>';
+      html += '<td>' + fmtShortDate(dd[6]) + '</td>';
       html += '<td>' + dd[5] + '</td>';
       html += '</tr>';
     }
@@ -344,6 +345,7 @@ function renderWL() {
   // 📋 第2组：预案（按安全垫降序，近期注册标红）
   if (pending.length > 0) {
     html += '<tr><td colspan="7" style="background:#f1f3f4;font-weight:600;font-size:12px;color:#5f6368;padding:5px 6px">📋 预案（同意注册，待发公告）</td></tr>';
+    html += '<tr><th style="background:#f5f5f5;font-size:11px;padding:4px 6px;text-align:left;color:#5f6368">状态</th><th style="background:#f5f5f5;font-size:11px;padding:4px 6px;text-align:left;color:#5f6368">正股</th><th style="background:#f5f5f5;font-size:11px;padding:4px 6px;text-align:left;color:#5f6368">股价</th><th style="background:#f5f5f5;font-size:11px;padding:4px 6px;text-align:left;color:#5f6368">需股数</th><th style="background:#f5f5f5;font-size:11px;padding:4px 6px;text-align:left;color:#5f6368">安全垫</th><th style="background:#f5f5f5;font-size:11px;padding:4px 6px;text-align:left;color:#5f6368">注册日</th><th style="background:#f5f5f5;font-size:11px;padding:4px 6px;text-align:left;color:#5f6368">评级</th></tr>';
     for (var m = 0; m < pending.length; m++) {
       var p = pending[m];
       var pc = calcBestCushion(p[0], p[3], p[4], 20);
@@ -368,6 +370,7 @@ function renderWL() {
   // ⚡ 第3组：已过登记日
   if (past.length > 0) {
     html += '<tr><td colspan="7" style="background:#e8f0fe;font-weight:600;font-size:12px;color:#1a73e8;padding:5px 6px">⚡ 已过登记日（可回测）</td></tr>';
+    html += '<tr><th style="background:#dbe8fc;font-size:11px;padding:4px 6px;text-align:left;color:#1a73e8">状态</th><th style="background:#dbe8fc;font-size:11px;padding:4px 6px;text-align:left;color:#1a73e8">正股</th><th style="background:#dbe8fc;font-size:11px;padding:4px 6px;text-align:left;color:#1a73e8">股价</th><th style="background:#dbe8fc;font-size:11px;padding:4px 6px;text-align:left;color:#1a73e8">需股数</th><th style="background:#dbe8fc;font-size:11px;padding:4px 6px;text-align:left;color:#1a73e8">安全垫</th><th style="background:#dbe8fc;font-size:11px;padding:4px 6px;text-align:left;color:#1a73e8">登记日</th><th style="background:#dbe8fc;font-size:11px;padding:4px 6px;text-align:left;color:#1a73e8">评级</th></tr>';
     for (var k = 0; k < past.length; k++) {
       var ddd = past[k];
       var ccc = calcBestCushion(ddd[0], ddd[3], ddd[4], 20);
@@ -379,7 +382,7 @@ function renderWL() {
       html += '<td>' + ddd[3].toFixed(2) + '</td>';
       html += '<td>' + ddd[4] + '</td>';
       html += '<td style="color:' + clr + ';font-weight:700">' + ccc.toFixed(2) + '%' + (isSH_ddd ? '<sup style="font-size:9px">激</sup>' : '') + '</td>';
-      html += '<td>' + fmtShortDate(ddd[8]) + '</td>';
+      html += '<td>' + fmtShortDate(ddd[6]) + '</td>';
       html += '<td>' + ddd[5] + '</td>';
       html += '</tr>';
     }
