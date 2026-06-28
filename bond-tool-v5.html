@@ -424,7 +424,7 @@ function calc() {
   var scs = [];
   for (var i = 0; i < drops.length; i++) {
     var dr = drops[i];
-    var sl = conCost * (dr / 100);
+    var sl = -conCost * (dr / 100);  // 正股盈亏：跌=负(亏)，涨=正(赚)
     var tp = bp1 + sl;
     var tr = conCost > 0 ? (tp / conCost) * 100 : 0;
     scs.push({ dr: dr, sl: sl, bp: bp1, tp: tp, tr: tr, ok: tp > 0 });
@@ -434,7 +434,7 @@ function calc() {
   var tblHtml = '';
   for (var j = 0; j < scs.length; j++) {
     var s = scs[j];
-    var cL = s.sl >= 0 ? 'lf' : 'pf';
+    var cL = s.sl >= 0 ? 'pf' : 'lf';
     var tL = s.tp >= 0 ? 'pf' : 'lf';
     var tRL = s.tr >= 0 ? 'pf' : 'lf';
     tblHtml += '<tr>';
