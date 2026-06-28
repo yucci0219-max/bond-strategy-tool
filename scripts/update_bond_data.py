@@ -418,31 +418,46 @@ def replace_var(content, var_name, new_value_str):
 
 def format_data_js(data):
     """将DATA数组格式化为紧凑的JS格式（保留原HTML中的注释风格）"""
-    lines = []
-    # 按状态分类添加注释
+    # 按状态分类
     past_date = [r for r in data if r[6] and r[6] <= TODAY]
     upcoming = [r for r in data if r[6] and r[6] > TODAY]
     yian = [r for r in data if not r[6]]
 
-    # 先放已过登记日
+    # 将每个子数组格式化为带逗号分隔的行
+    items = []
+
     if past_date:
-        lines.append(f'// 已公布登记日（登记日已过）- {len(past_date)}只')
+        items.append(f'// 已公布登记日（登记日已过）- {len(past_date)}只')
         for row in past_date:
-            lines.append('[' + ','.join(js_value(v) for v in row) + ']')
+            items.append('[' + ','.join(js_value(v) for v in row) + ']')
 
-    # 再放即将操作
     if upcoming:
-        lines.append(f'// 即将操作（登记日尚未到）- {len(upcoming)}只')
+        items.append(f'// 即将操作（登记日尚未到）- {len(upcoming)}只')
         for row in upcoming:
-            lines.append('[' + ','.join(js_value(v) for v in row) + ']')
+            items.append('[' + ','.join(js_value(v) for v in row) + ']')
 
-    # 最后放预案
     if yian:
-        lines.append(f'// 预案（未公布登记日）- {len(yian)}只')
+        items.append(f'// 预案（未公布登记日）- {len(yian)}只')
         for row in yian:
-            lines.append('[' + ','.join(js_value(v) for v in row) + ']')
+            items.append('[' + ','.join(js_value(v) for v in row) + ']')
 
-    return '[' + '\n'.join(lines) + ']'
+    # 注释行不需要逗号，数组行之间需要逗号
+    # 构建最终字符串：每个数组行后面加逗号（最后一行不加），注释行不加
+    result_lines = []
+    array_lines = [i for i in items if not i.startswith('//')]
+    comment_lines = [i for i in items if i.startswith('//')]
+
+    # 重新组合：注释行直接输出，数组行用逗号分隔
+    output = []
+    for item in items:
+        if item.startswith('//'):
+            output.append(item)
+        elif item == array_lines[-1]:
+            output.append(item)  # 最后一行不加逗号
+        else:
+            output.append(item + ',')  # 其他数组行加逗号
+
+    return '[' + '\n'.join(output) + ']'
 
 
 def format_backtest_js(backtest):
