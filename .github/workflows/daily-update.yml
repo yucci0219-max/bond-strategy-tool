@@ -1,0 +1,54 @@
+name: Daily Bond Data Update
+
+on:
+  schedule:
+    - cron: '35 1 * * *'    # UTC 01:35 = 北京时间 09:35
+  workflow_dispatch:          # 手动触发按钮
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run update script
+        env:
+          JISILU_COOKIE: ${{ secrets.JISILU_COOKIE }}
+          SCKEY: ${{ secrets.SCKEY }}
+        run: python scripts/update_bond_data.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add index.html bond-tool-v5.html data/
+          git diff --cached --quiet || (
+            git commit -m "auto: 每日数据更新 $(date -u +%Y-%m-%dT%H:%M)" &&
+            git push
+          )
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SCKEY: ${{ secrets.SCKEY }}
+        run: |
+          if [ -n "$SCKEY" ]; then
+            curl -s "https://sctapi.ftqq.com/${SCKEY}.send?title=抢权配债数据更新失败&desp=请检查Actions日志：https://github.com/${{ github.repository }}/actions" || true
+          else
+            echo "SCKEY未配置，跳过通知"
+          fi
