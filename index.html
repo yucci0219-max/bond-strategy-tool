@@ -434,7 +434,7 @@ function calc() {
   var tblHtml = '';
   for (var j = 0; j < scs.length; j++) {
     var s = scs[j];
-    var cL = s.sl <= 0 ? 'lf' : 'pf';
+    var cL = s.sl >= 0 ? 'lf' : 'pf';
     var tL = s.tp >= 0 ? 'pf' : 'lf';
     var tRL = s.tr >= 0 ? 'pf' : 'lf';
     tblHtml += '<tr>';
