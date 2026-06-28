@@ -112,7 +112,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div>
 <div class="cd" id="rCard" style="display:none"><h2>📊 分析结果</h2><div class="mg" id="mGrid"></div><div id="rBadge" style="margin:6px 0"></div></div>
 <div class="cd" id="cCard" style="display:none"><h2>📈 情景分析图</h2><canvas id="sChart" height="260"></canvas></div>
-<div class="cd" id="tCard" style="display:none"><h2>📋 情景明细</h2><div style="overflow-x:auto"><table class="st" id="sTbl"><thead><tr><th>正股变动</th><th>正股盈亏</th><th>转债收益</th><th>综合收益</th><th>收益率</th><th>盈亏</th></tr></thead><tbody id="sBody"></tbody></table></div></div>
+<div class="cd" id="tCard" style="display:none"><h2>📋 情景明细<span id="btTag" style="font-size:11px;font-weight:400;color:#ea4335;margin-left:8px"></span></h2><div style="overflow-x:auto"><table class="st" id="sTbl"><thead><tr><th>场景</th><th>正股盈亏</th><th>转债收益</th><th>综合收益</th><th>收益率</th><th>盈亏</th></tr></thead><tbody id="sBody"></tbody></table></div></div>
 <div class="cd" id="bCard" style="display:none"><h2>🧮 计算过程</h2><div id="bSteps" style="font-size:13px;line-height:2;color:#3c4043"></div></div>
 </div>
 
@@ -170,6 +170,26 @@ var DATA=[
 ["002913","奥士康","待定",63.96,318,"-","","","2026-04-02"],
 ["600642","申能股份","待定",8.63,2445,"-","","","2026-03-18"]
 ];
+
+// 已过登记日股票的次日实际行情回测数据（东方财富历史K线）
+// openPct=次日开盘涨幅, lowPct=次日最低涨幅, closePct=次日收盘涨幅（均相对登记日收盘）
+var BACKTEST = {
+  "301215":{openPct:-6.63,lowPct:-10.75,closePct:-9.86},
+  "688377":{openPct:-7.54,lowPct:-12.40,closePct:-9.12},
+  "000422":{openPct:-7.51,lowPct:-8.00,closePct:-7.79},
+  "301499":{openPct:-10.26,lowPct:-13.90,closePct:-12.32},
+  "605589":{openPct:-1.72,lowPct:-4.57,closePct:10.00},
+  "688668":{openPct:-2.75,lowPct:-2.75,closePct:-0.47},
+  "600456":{openPct:-9.22,lowPct:-9.85,closePct:-8.17},
+  "688200":{openPct:-0.71,lowPct:-0.71,closePct:3.98},
+  "688484":{openPct:-2.26,lowPct:-2.47,closePct:-0.41},
+  "301059":{openPct:-10.33,lowPct:-12.86,closePct:-12.38},
+  "603809":{openPct:-7.52,lowPct:-7.52,closePct:-4.67},
+  "603270":{openPct:-6.61,lowPct:-6.71,closePct:-0.52},
+  "688092":{openPct:-14.21,lowPct:-19.71,closePct:-17.14},
+  "603129":{openPct:-2.73,lowPct:-5.62,closePct:-5.00},
+  "603112":{openPct:-7.58,lowPct:-10.00,closePct:-10.00}
+};
 
 // 今天日期（用于判断登记日是否已过）
 var TODAY = '2026-06-28';
@@ -438,14 +458,41 @@ function calc() {
   else { rt = '★★☆☆☆ 安全垫不足'; rc = 'badge-lo'; }
   document.getElementById('rBadge').innerHTML = '<span class="badge ' + rc + '">' + rt + '</span>';
 
-  var drops = [-2, -1, 0, 1, 2, 3, 5, 8, 10, 15, 20];
+  // ── 情景分析 ──
+  // 已过登记日且有回测数据：用实际次日行情
+  // 否则：用模拟跌幅情景
+  var bt = BACKTEST[code];
   var scs = [];
-  for (var i = 0; i < drops.length; i++) {
-    var dr = drops[i];
-    var sl = -conCost * (dr / 100);  // 正股盈亏：跌=负(亏)，涨=正(赚)
-    var tp = bp1 + sl;
-    var tr = conCost > 0 ? (tp / conCost) * 100 : 0;
-    scs.push({ dr: dr, sl: sl, bp: bp1, tp: tp, tr: tr, ok: tp > 0 });
+  var isBacktest = false;
+
+  if (bt && curData && curData[6] && curData[6] <= TODAY) {
+    // 回测模式：用实际次日开盘、最低、收盘涨幅
+    isBacktest = true;
+    document.getElementById('btTag').innerHTML = '🔴 实际回测（登记日次日行情）';
+    var btScenarios = [
+      { label: '次日开盘', pct: bt.openPct },
+      { label: '次日最低', pct: bt.lowPct },
+      { label: '次日收盘', pct: bt.closePct }
+    ];
+    for (var i = 0; i < btScenarios.length; i++) {
+      var bs = btScenarios[i];
+      var sl = -conCost * (bs.pct / 100);  // 正股盈亏
+      var tp = bp1 + sl;
+      var tr = conCost > 0 ? (tp / conCost) * 100 : 0;
+      scs.push({ label: bs.label, dr: bs.pct, sl: sl, bp: bp1, tp: tp, tr: tr, ok: tp > 0 });
+    }
+  } else {
+    // 模拟模式
+    document.getElementById('btTag').innerHTML = '📊 模拟情景';
+    var drops = [-2, -1, 0, 1, 2, 3, 5, 8, 10, 15, 20];
+    for (var i = 0; i < drops.length; i++) {
+      var dr = drops[i];
+      var sl = -conCost * (dr / 100);
+      var tp = bp1 + sl;
+      var tr = conCost > 0 ? (tp / conCost) * 100 : 0;
+      var lbl = (dr > 0 ? '跌' : dr < 0 ? '涨' : '平') + Math.abs(dr) + '%';
+      scs.push({ label: lbl, dr: dr, sl: sl, bp: bp1, tp: tp, tr: tr, ok: tp > 0 });
+    }
   }
 
   var tblBody = document.getElementById('sBody');
@@ -456,7 +503,7 @@ function calc() {
     var tL = s.tp >= 0 ? 'pf' : 'lf';
     var tRL = s.tr >= 0 ? 'pf' : 'lf';
     tblHtml += '<tr>';
-    tblHtml += '<td>' + (s.dr > 0 ? '跌' : s.dr < 0 ? '涨' : '平') + Math.abs(s.dr) + '%</td>';
+    tblHtml += '<td>' + s.label + '</td>';
     tblHtml += '<td class="' + cL + '">' + s.sl.toFixed(0) + '</td>';
     tblHtml += '<td class="pf">' + s.bp.toFixed(0) + '</td>';
     tblHtml += '<td class="' + tL + '">' + s.tp.toFixed(0) + '</td>';
@@ -475,7 +522,7 @@ function calc() {
   var tpData = [];
   var ptColors = [];
   for (var k = 0; k < scs.length; k++) {
-    labels.push((scs[k].dr > 0 ? '跌' : scs[k].dr < 0 ? '涨' : '平') + Math.abs(scs[k].dr) + '%');
+    labels.push(scs[k].label);
     slData.push(scs[k].sl);
     bpData.push(scs[k].bp);
     tpData.push(scs[k].tp);
@@ -531,8 +578,18 @@ function calc() {
 
   stepsHtml +=
     '<p>⑤ <strong>盈亏平衡</strong>：正股跌幅 ≤ ' + conCush.toFixed(2) + '%（保守版）时盈利</p>' +
-    '<p>⑥ <strong>1手转债收益</strong>：10张×(' + expP.toFixed(0) + '-100) = <strong>¥' + bp1.toFixed(0) + '</strong></p>' +
-    rndNote;
+    '<p>⑥ <strong>1手转债收益</strong>：10张×(' + expP.toFixed(0) + '-100) = <strong>¥' + bp1.toFixed(0) + '</strong></p>';
+
+  if (isBacktest) {
+    stepsHtml += '<p style="color:#ea4335;font-weight:600">📊 <strong>实际回测</strong>（登记日' + curData[6] + '次日行情）：</p>';
+    stepsHtml += '<p>　开盘' + bt.openPct + '% → 正股盈亏¥' + (-conCost * bt.openPct / 100).toFixed(0) + '，综合¥' + (bp1 - conCost * bt.openPct / 100).toFixed(0) + '</p>';
+    stepsHtml += '<p>　最低' + bt.lowPct + '% → 正股盈亏¥' + (-conCost * bt.lowPct / 100).toFixed(0) + '，综合¥' + (bp1 - conCost * bt.lowPct / 100).toFixed(0) + '</p>';
+    stepsHtml += '<p>　收盘' + bt.closePct + '% → 正股盈亏¥' + (-conCost * bt.closePct / 100).toFixed(0) + '，综合¥' + (bp1 - conCost * bt.closePct / 100).toFixed(0) + '</p>';
+    var bestExit = Math.max(bt.openPct, bt.closePct);
+    stepsHtml += '<p>💡 <strong>最优卖出</strong>：' + (bestExit === bt.openPct ? '开盘' : '收盘') + '卖出，综合收益¥' + (bp1 - conCost * bestExit / 100).toFixed(0) + '</p>';
+  }
+
+  stepsHtml += rndNote;
 
   document.getElementById('bSteps').innerHTML = stepsHtml;
 
