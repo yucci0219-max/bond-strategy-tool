@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>抢权配债策略工具 v4.0</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#202124;line-height:1.6}
+.hdr{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:24px 32px}
+.hdr h1{font-size:22px;font-weight:700}.hdr p{font-size:13px;opacity:.85;margin-top:4px}
+.ctn{max-width:1200px;margin:0 auto;padding:20px}
+.g2{display:grid;grid-template-columns:370px 1fr;gap:20px}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+.cd{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:20px;margin-bottom:20px}
+.cd h2{font-size:15px;font-weight:600;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #e0e0e0}
+.fg{margin-bottom:12px}.fg label{display:block;font-size:13px;color:#5f6368;margin-bottom:3px}
+.fg input{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;outline:none}
+.fg input:focus{border-color:#1a73e8}
+.fr{display:flex;gap:8px}.fr>*{flex:1}
+.bt{display:inline-block;padding:9px 16px;border:none;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}
+.bt-p{background:#1a73e8;color:#fff;width:100%;text-align:center}.bt-p:hover{background:#1557b0}
+.bt-s{background:#e8f0fe;color:#1a73e8;font-size:12px;padding:5px 10px;width:auto}.bt-s:hover{background:#d2e3fc}
+.mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:10px;margin:14px 0}
+.mc{background:#f8f9fa;border-radius:8px;padding:12px;text-align:center}
+.mc .v{font-size:20px;font-weight:700}.mc .l{font-size:11px;color:#5f6368;margin-top:2px}
+.mc-g{border-left:4px solid #34a853}.mc-r{border-left:4px solid #ea4335}.mc-b{border-left:4px solid #1a73e8}.mc-y{border-left:4px solid #fbbc04}
+.badge{display:inline-block;padding:3px 10px;border-radius:16px;font-size:13px;font-weight:600}
+.badge-h{background:#e6f4ea;color:#137333}.badge-m{background:#fef7e0;color:#b06000}.badge-lo{background:#fce8e6;color:#c5221f}
+.st{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.st th{background:#f1f3f4;padding:7px 8px;text-align:center;font-weight:600;color:#5f6368}
+.st td{padding:7px 8px;text-align:center;border-bottom:1px solid #eee}
+.st tr:hover td{background:#f8f9fa}
+.pf{color:#34a853;font-weight:600}.lf{color:#ea4335;font-weight:600}
+.wt{width:100%;border-collapse:collapse;font-size:13px}
+.wt th{background:#f1f3f4;padding:7px 8px;text-align:left;font-weight:600;color:#5f6368}
+.wt td{padding:7px 8px;border-bottom:1px solid #eee}
+.wt tr:hover td{background:#f8f9fa;cursor:pointer}
+.adbox{margin-top:14px;padding:12px;background:#fef7e0;border-radius:8px;font-size:13px;line-height:1.7}
+.discl{font-size:12px;color:#9aa0a6;padding:14px;border-top:1px solid #eee;margin-top:20px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="hdr"><h1>⚡ 抢权配债策略工具 v4.0</h1><p>最低配1手 · 保守/激进对比 · 取整进位 · 预案预测</p></div>
+<div class="ctn"><div class="g2">
+
+<!-- ═══ 左侧 ═══ -->
+<div>
+<div class="cd">
+<h2>📋 参数输入</h2>
+<div class="fg"><label>正股代码</label><input id="iCode" value="600456"></div>
+<div class="fg"><label>正股名称</label><input id="iName" value="宝钛股份"></div>
+<div class="fr">
+<div class="fg"><label>正股当前价（元）</label><input type="number" id="iPrice" value="26.40" step="0.01"></div>
+<div class="fg"><label>配10张需持股（股）</label><input type="number" id="iShares" value="135" step="1"></div>
+</div>
+<div class="fr">
+<div class="fg"><label>股权登记日</label><input type="date" id="iRecDate" value="2026-06-23"></div>
+<div class="fg"><label>预估上市溢价率（%）</label><input type="number" id="iPremium" value="20" step="1"></div>
+</div>
+<div class="fr">
+<div class="fg"><label>📅 预估登记日（预案用）</label><input type="date" id="iEstRec" value=""></div>
+<div class="fg"><label>预估申购日（=登记日+1）</label><input type="date" id="iEstApply" value=""></div>
+</div>
+<div style="margin-top:16px"><button class="bt bt-p" id="calcBtn">🔍 开始分析（配1手最低）</button></div>
+<p style="font-size:11px;color:#9aa0a6;margin-top:6px">💡 保守版=确保配1手 | 激进版=卡0.5手取整进位（仅沪市）| 深市精确到张无取整问题</p>
+</div>
+
+<div class="cd">
+<h2>📌 待发转债（点击选入）</h2>
+<div style="font-size:12px;color:#9aa0a6;margin-bottom:8px">数据: 集思录 2026-06-28 · 共39只</div>
+<div style="overflow-x:auto;max-height:420px;overflow-y:auto">
+<table class="wt" id="wlTbl">
+<thead><tr><th>正股</th><th>股价</th><th>需股数</th><th>安全垫</th><th>评级</th></tr></thead>
+<tbody id="wlBody"></tbody>
+</table>
+</div>
+<div style="margin-top:8px;display:flex;gap:6px">
+<button class="bt bt-s" id="refreshBtn">🔄 刷新</button>
+<button class="bt bt-s" id="flowBtn">📅 发行流程</button>
+</div>
+</div>
+
+<div class="cd" id="flowCd" style="display:none">
+<h2>📅 发行流程 & 取整规则</h2>
+<div style="font-size:13px;line-height:2">
+<p><strong>完整流程：</strong>同意注册 → 发行公告 → 登记日(T-1) → 申购日(T) → 中签(T+2) → 上市</p>
+<p><strong>同意注册→发行公告：</strong>7~30天 | <strong>发行公告→登记日：</strong>1~3天</p>
+<hr style="border:none;border-top:1px solid #eee;margin:8px 0">
+<p><strong>⭐ 沪市取整：</strong>最小单位1手(10张)。不足1手按"精确算法"≈四舍五入。配0.5手→大概率进位获1手（非100%）</p>
+<p><strong>⭐ 深市取整：</strong>最小单位1张(100元)。取整影响极小，基本精确配售</p>
+<p style="color:#e8a000;font-size:12px;margin-top:6px">💡 激进版（卡0.5手）仅适用于沪市转债。如参与人多，余数相同则随机抽签，有落选风险。</p>
+</div>
+</div>
+
+<div class="cd">
+<h2>⏰ 操作时机</h2>
+<div id="tlBox"><p style="color:#9aa0a6;font-size:13px">点击"开始分析"后显示</p></div>
+</div>
+</div>
+
+<!-- ═══ 右侧 ═══ -->
+<div>
+<div class="cd" id="rCard" style="display:none"><h2>📊 分析结果</h2><div class="mg" id="mGrid"></div><div id="rBadge" style="margin:6px 0"></div></div>
+<div class="cd" id="cCard" style="display:none"><h2>📈 情景分析图</h2><canvas id="sChart" height="260"></canvas></div>
+<div class="cd" id="tCard" style="display:none"><h2>📋 情景明细</h2><div style="overflow-x:auto"><table class="st" id="sTbl"><thead><tr><th>正股跌幅</th><th>正股亏损</th><th>转债收益</th><th>综合收益</th><th>收益率</th><th>盈亏</th></tr></thead><tbody id="sBody"></tbody></table></div></div>
+<div class="cd" id="bCard" style="display:none"><h2>🧮 计算过程</h2><div id="bSteps" style="font-size:13px;line-height:2;color:#3c4043"></div></div>
+</div>
+
+</div></div>
+
+<div class="discl">
+⚠️ 本工具仅供参考，不构成投资建议。抢权配债有正股下跌风险，转债溢价率不确定。投资需谨慎。<br>
+数据来源: <a href="https://www.jisilu.cn/web/data/cb/pre" target="_blank">集思录待发转债</a>(2026-06-28)。正股价为抓取时市价，请确认最新价格。
+</div>
+
+<script>
+// ═════════════════════════════════════
+// 数据：[代码, 名称, 转债名, 股价, 配10张需股数, 评级, 登记日, 申购日]
+// ═════════════════════════════════════
+var DATA=[
+// 已公布登记日（可操作）- 15只
+["301215","中汽股份","中汽转债",5.26,1275,"AA+","2026-06-10","2026-06-10"],
+["688377","迪威尔","迪威转债",23.63,258,"AA-","2026-06-03","2026-06-03"],
+["000422","湖北宜化","宜化转债",13.26,330,"AA+","2026-06-25","2026-06-25"],
+["301499","维科精密","维科转债",29.90,220,"A+","2026-06-25","2026-06-25"],
+["605589","圣泉集团","圣泉转债",66.71,339,"AA+","2026-06-24","2026-06-24"],
+["688668","鼎通科技","鼎通转债",376.01,150,"A+","2026-06-23","2026-06-23"],
+["600456","宝钛股份","宝钛转债",26.40,135,"AAA","2026-06-23","2026-06-23"],
+["688200","华峰测控","华峰转债",469.10,268,"AA","2026-06-22","2026-06-22"],
+["688484","南芯科技","南芯转债",50.26,269,"AA+","2026-06-17","2026-06-17"],
+["301059","金三江","三江转债",11.18,794,"A+","2026-06-16","2026-06-16"],
+["603809","豪能股份","豪26转债",8.64,512,"AA-","2026-06-12","2026-06-12"],
+["603270","金帝股份","金帝转债",31.59,226,"AA","2026-06-12","2026-06-12"],
+["688092","爱科科技","爱科转债",21.20,310,"AA-","2026-06-10","2026-06-10"],
+["603129","春风动力","春风转债",244.00,71,"AA+","2026-06-09","2026-06-09"],
+["603112","华翔股份","翔26转债",17.03,416,"AA-","2026-06-05","2026-06-05"],
+// 预案（未公布登记日）- 24只
+["688278","特宝生物","待定",52.93,267,"-","",""],
+["301000","肇民科技","待定",30.88,413,"-","",""],
+["600389","江山股份","待定",19.78,364,"-","",""],
+["300453","三鑫医疗","待定",8.91,986,"-","",""],
+["603339","四方科技","待定",14.26,303,"-","",""],
+["603786","科博达","待定",41.15,271,"-","",""],
+["300815","玉禾田","待定",16.67,266,"-","",""],
+["002913","奥士康","待定",63.96,318,"-","",""],
+["600642","申能股份","待定",8.63,2445,"-","",""],
+["000887","中鼎股份","待定",17.35,686,"-","",""],
+["002997","瑞鹄模具","待定",28.26,306,"-","",""],
+["300953","震裕科技","待定",128.20,130,"-","",""],
+["603163","圣晖集成","待定",135.58,182,"-","",""],
+["301132","满坤科技","待定",55.20,195,"-","",""],
+["605123","派克新材","待定",95.05,77,"-","",""],
+["301628","强达电路","待定",108.12,138,"-","",""],
+["301459","丰茂股份","待定",31.30,172,"-","",""],
+["301565","中仑新材","待定",24.11,375,"-","",""],
+["002550","千红制药","待定",5.98,1280,"-","",""],
+["300631","久吾高科","待定",23.20,417,"-","",""],
+["688605","先锋精科","待定",99.00,271,"-","",""],
+["603067","振华股份","待定",42.74,861,"-","",""],
+["688480","赛恩斯","待定",89.69,169,"-","",""],
+["688686","奥普特","待定",154.20,97,"-","",""]
+];
+
+// ═════════════════════════════════════
+// 工具函数
+// ═════════════════════════════════════
+function calcCushion(price, shares, premium) {
+  if (price <= 0 || shares <= 0) return 0;
+  var allot = 1000.0 / shares;
+  var hundR = (100.0 / price) * allot;
+  return hundR * (premium / 100.0);
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  var dt = new Date(d);
+  return dt.toISOString().slice(0, 10);
+}
+
+// ═════════════════════════════════════
+// 关注池渲染（只操作tbody，不破坏thead）
+// ═════════════════════════════════════
+function renderWL() {
+  var tbody = document.getElementById('wlBody');
+  if (!tbody) { console.error('wlBody not found'); return; }
+
+  var wd = DATA.filter(function(d) { return d[6] && d[6] !== ''; });
+  var nd = DATA.filter(function(d) { return !d[6] || d[6] === ''; });
+
+  var sf = function(a, b) {
+    return calcCushion(b[3], b[4], 20) - calcCushion(a[3], a[4], 20);
+  };
+  wd.sort(sf);
+  nd.sort(sf);
+
+  var html = '';
+  if (wd.length > 0) {
+    html += '<tr><td colspan="5" style="background:#e8f0fe;font-weight:600;font-size:12px;color:#1a73e8;padding:5px 8px">⚡ 可操作（已公布登记日）</td></tr>';
+    for (var i = 0; i < wd.length; i++) {
+      var d = wd[i];
+      var c = calcCushion(d[3], d[4], 20);
+      var clr = c >= 5 ? '#34a853' : c >= 3 ? '#e8a000' : c >= 1.5 ? '#ea4335' : '#9aa0a6';
+      html += '<tr onclick="loadD(\'' + d[0] + '\')" style="cursor:pointer">';
+      html += '<td>' + d[1] + '</td>';
+      html += '<td>' + d[3].toFixed(2) + '</td>';
+      html += '<td>' + d[4] + '</td>';
+      html += '<td style="color:' + clr + ';font-weight:700">' + c.toFixed(2) + '%</td>';
+      html += '<td>' + d[5] + '</td>';
+      html += '</tr>';
+    }
+  }
+  if (nd.length > 0) {
+    html += '<tr><td colspan="5" style="background:#f1f3f4;font-weight:600;font-size:12px;color:#5f6368;padding:5px 8px">📋 预案（填预估登记日后可分析）</td></tr>';
+    for (var j = 0; j < nd.length; j++) {
+      var dd = nd[j];
+      var cc = calcCushion(dd[3], dd[4], 20);
+      var clrr = cc >= 5 ? '#34a853' : cc >= 3 ? '#e8a000' : cc >= 1.5 ? '#ea4335' : '#9aa0a6';
+      html += '<tr onclick="loadD(\'' + dd[0] + '\')" style="cursor:pointer;opacity:.85">';
+      html += '<td>' + dd[1] + '</td>';
+      html += '<td>' + dd[3].toFixed(2) + '</td>';
+      html += '<td>' + dd[4] + '</td>';
+      html += '<td style="color:' + clrr + ';font-weight:700">' + cc.toFixed(2) + '%</td>';
+      html += '<td>' + dd[5] + '</td>';
+      html += '</tr>';
+    }
+  }
+
+  tbody.innerHTML = html;
+}
+
+// 点击关注池行，加载到输入框
+function loadD(code) {
+  var d = DATA.find(function(x) { return x[0] === code; });
+  if (!d) return;
+  document.getElementById('iCode').value = d[0];
+  document.getElementById('iName').value = d[1];
+  document.getElementById('iPrice').value = d[3];
+  document.getElementById('iShares').value = d[4];
+  document.getElementById('iEstRec').value = '';
+  document.getElementById('iEstApply').value = '';
+
+  if (d[6] && d[6] !== '') {
+    document.getElementById('iRecDate').value = d[6];
+    calc();
+  } else {
+    document.getElementById('iRecDate').value = '';
+    hideResults();
+    document.getElementById('tlBox').innerHTML = '<p style="color:#e8a000;font-size:13px;font-weight:600">⚠️ ' + d[1] + ' 尚未公布登记日</p><p style="color:#5f6368;font-size:13px;margin-top:4px">请在"预估登记日"栏填预测日期，再点"开始分析"</p>';
+  }
+}
+
+function hideResults() {
+  document.getElementById('rCard').style.display = 'none';
+  document.getElementById('cCard').style.display = 'none';
+  document.getElementById('tCard').style.display = 'none';
+  document.getElementById('bCard').style.display = 'none';
+}
+
+// ═════════════════════════════════════
+// 核心计算
+// ═════════════════════════════════════
+var myChart = null;
+
+function calc() {
+  // 读取输入
+  var code = document.getElementById('iCode').value.trim();
+  var name = document.getElementById('iName').value.trim();
+  var price = parseFloat(document.getElementById('iPrice').value) || 0;
+  var sh10 = parseInt(document.getElementById('iShares').value) || 0;
+  var prem = parseFloat(document.getElementById('iPremium').value) || 20;
+  var recR = document.getElementById('iRecDate').value;
+  var recE = document.getElementById('iEstRec').value;
+  var rec = recR || recE || '';
+  var isEst = !recR && recE !== '';
+
+  // 前置校验
+  if (price <= 0 || sh10 <= 0) {
+    alert('请输入有效的正股价和需持股数');
+    return;
+  }
+
+  // ── 基础计算 ──
+  var allot = 1000.0 / sh10;          // 每股配债面值
+  var isSH = code.charAt(0) === '6';   // 沪市判断
+  var hundR = (100.0 / price) * allot; // 百元含权
+  var sc = hundR * (prem / 100.0);     // 安全垫
+  var expP = 100 + prem;               // 预计转债价格
+  var bp1 = 10 * (expP - 100);         // 1手转债收益(元)
+
+  // ── 保守版：确保获配1手 ──
+  var conSh = Math.ceil(sh10 / 100) * 100;  // 取整到百股
+  var conCost = conSh * price;
+  var conCush = (bp1 / conCost) * 100;
+
+  // ── 激进版：卡0.5手取整进位（仅沪市有意义）──
+  var aggSh, aggCost, aggCush, hasAdv;
+  if (isSH) {
+    aggSh = Math.ceil(sh10 * 0.5 / 100) * 100;
+    aggCost = aggSh * price;
+    aggCush = (bp1 / aggCost) * 100;
+    hasAdv = aggSh < conSh;
+  } else {
+    aggSh = conSh;
+    aggCost = conCost;
+    aggCush = conCush;
+    hasAdv = false;
+  }
+
+  // ── 显示结果卡片 ──
+  document.getElementById('rCard').style.display = '';
+  document.getElementById('cCard').style.display = '';
+  document.getElementById('tCard').style.display = '';
+  document.getElementById('bCard').style.display = '';
+
+  // 指标网格
+  var exN = isSH ? '沪市(上交所)' : '深市(深交所)';
+  var minU = isSH ? '1手(10张=1000元)' : '1张(100元)';
+  var grid = document.getElementById('mGrid');
+  var scClass = sc >= 3 ? 'mc-g' : sc >= 1.5 ? 'mc-y' : 'mc-r';
+
+  grid.innerHTML =
+    '<div class="mc mc-b"><div class="v">' + conSh + '</div><div class="l">保守版持股数</div></div>' +
+    '<div class="mc mc-b"><div class="v">¥' + conCost.toFixed(0) + '</div><div class="l">保守版投入</div></div>' +
+    '<div class="mc mc-b"><div class="v">1手</div><div class="l">保守版可配</div></div>' +
+    '<div class="mc mc-g"><div class="v">¥' + bp1.toFixed(0) + '</div><div class="l">1手转债收益</div></div>' +
+    '<div class="mc ' + scClass + '"><div class="v">' + conCush.toFixed(2) + '%</div><div class="l">安全垫(保守)</div></div>' +
+    '<div class="mc mc-y"><div class="v">' + conCush.toFixed(2) + '%</div><div class="l">盈亏平衡点</div></div>';
+
+  // 激进版对比（仅沪市且有取整优势时显示）
+  if (hasAdv) {
+    grid.innerHTML += '<div class="adbox">' +
+      '<strong>⚡ 沪市取整进位策略（激进版）</strong><br>' +
+      '持股 <strong>' + aggSh + '股</strong>（卡0.5手），投入 <strong>¥' + aggCost.toFixed(0) + '</strong><br>' +
+      '激进安全垫 <strong>' + aggCush.toFixed(2) + '%</strong>（vs 保守 ' + conCush.toFixed(2) + '%）<br>' +
+      '⚠️ 0.5手进位为1手是<strong>大概率但非100%</strong>，余数相同股东多时可能随机抽签落选' +
+      '</div>';
+  }
+
+  // 评级徽章
+  var rt, rc;
+  if (conCush >= 5) { rt = '★★★★★ 高安全垫积极参与'; rc = 'badge-h'; }
+  else if (conCush >= 3) { rt = '★★★★☆ 中等安全垫可参与'; rc = 'badge-m'; }
+  else if (conCush >= 1.5) { rt = '★★★☆☆ 安全垫偏低谨慎'; rc = 'badge-m'; }
+  else { rt = '★★☆☆☆ 安全垫不足'; rc = 'badge-lo'; }
+  document.getElementById('rBadge').innerHTML = '<span class="badge ' + rc + '">' + rt + '</span>';
+
+  // ── 情景分析（基于保守版1手成本）──
+  var drops = [-2, -1, 0, 1, 2, 3, 5, 8, 10, 15, 20];
+  var scs = [];
+  for (var i = 0; i < drops.length; i++) {
+    var dr = drops[i];
+    var sl = conCost * (dr / 100);
+    var tp = bp1 + sl;
+    var tr = conCost > 0 ? (tp / conCost) * 100 : 0;
+    scs.push({ dr: dr, sl: sl, bp: bp1, tp: tp, tr: tr, ok: tp > 0 });
+  }
+
+  // 情景表格
+  var tblBody = document.getElementById('sBody');
+  var tblHtml = '';
+  for (var j = 0; j < scs.length; j++) {
+    var s = scs[j];
+    var cL = s.sl <= 0 ? 'lf' : 'pf';
+    var tL = s.tp >= 0 ? 'pf' : 'lf';
+    var tRL = s.tr >= 0 ? 'pf' : 'lf';
+    tblHtml += '<tr>';
+    tblHtml += '<td>' + s.dr + '%</td>';
+    tblHtml += '<td class="' + cL + '">' + s.sl.toFixed(0) + '</td>';
+    tblHtml += '<td class="pf">' + s.bp.toFixed(0) + '</td>';
+    tblHtml += '<td class="' + tL + '">' + s.tp.toFixed(0) + '</td>';
+    tblHtml += '<td class="' + tRL + '">' + s.tr.toFixed(2) + '%</td>';
+    tblHtml += '<td>' + (s.ok ? '✅' : '❌') + '</td>';
+    tblHtml += '</tr>';
+  }
+  tblBody.innerHTML = tblHtml;
+
+  // ── 图表 ──
+  var ctx = document.getElementById('sChart').getContext('2d');
+  if (myChart) { myChart.destroy(); }
+
+  var labels = [];
+  var slData = [];
+  var bpData = [];
+  var tpData = [];
+  var ptColors = [];
+  for (var k = 0; k < scs.length; k++) {
+    labels.push('跌' + Math.abs(scs[k].dr) + '%');
+    slData.push(scs[k].sl);
+    bpData.push(scs[k].bp);
+    tpData.push(scs[k].tp);
+    ptColors.push(scs[k].ok ? '#34a853' : '#ea4335');
+  }
+
+  myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: '正股亏损', data: slData, backgroundColor: 'rgba(234,67,53,.7)', borderRadius: 4 },
+        { label: '转债收益', data: bpData, backgroundColor: 'rgba(52,168,83,.7)', borderRadius: 4 },
+        { label: '综合收益', data: tpData, type: 'line', borderColor: '#1a73e8', fill: false, tension: 0.3, pointRadius: 4,
+          pointBackgroundColor: ptColors, order: 0 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 12 } } },
+        tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ¥' + c.parsed.y.toFixed(0); } } }
+      },
+      scales: {
+        y: { title: { display: true, text: '收益（元）', font: { size: 12 } }, grid: { color: '#f0f0f0' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ── 计算过程 ──
+  var rndNote;
+  if (isSH) {
+    rndNote = '<p>⭐ <strong>沪市取整规则</strong>：最小单位1手。不足1手按"精确算法"≈四舍五入。' +
+      (hasAdv ? '持股' + aggSh + '股卡0.5手→<strong>大概率</strong>获配1手（非100%）。' : '无取整优势（配售股数已为整百股）。') +
+      '</p>';
+  } else {
+    rndNote = '<p>⭐ <strong>深市取整规则</strong>：最小单位1张(100元)。取整影响极小，基本精确配售。</p>';
+  }
+
+  var stepsHtml =
+    '<p>① <strong>每股配债额</strong> = 1000 ÷ ' + sh10 + ' = <strong>' + allot.toFixed(4) + ' 元面值/股</strong></p>' +
+    '<p>② <strong>交易所</strong>：' + exN + '，配售最小单位：' + minU + '</p>' +
+    '<p>③ <strong>百元含权</strong> = (100 ÷ ' + price.toFixed(2) + ') × ' + allot.toFixed(4) + ' = <strong>' + hundR.toFixed(2) + ' 元面值</strong></p>' +
+    '<p>④ <strong>保守版</strong>：持股' + conSh + '股(确保1手)，投入¥' + conCost.toFixed(0) + '，安全垫' + conCush.toFixed(2) + '%</p>';
+
+  if (hasAdv) {
+    stepsHtml += '<p>④\' <strong>激进版</strong>：持股' + aggSh + '股(卡0.5手)，投入¥' + aggCost.toFixed(0) + '，安全垫' + aggCush.toFixed(2) + '%</p>';
+  }
+
+  stepsHtml +=
+    '<p>⑤ <strong>盈亏平衡</strong>：正股跌幅 ≤ ' + conCush.toFixed(2) + '%（保守版）时盈利</p>' +
+    '<p>⑥ <strong>1手转债收益</strong>：10张×(' + expP.toFixed(0) + '-100) = <strong>¥' + bp1.toFixed(0) + '</strong></p>' +
+    rndNote;
+
+  document.getElementById('bSteps').innerHTML = stepsHtml;
+
+  // ── 时间线 ──
+  var tl = document.getElementById('tlBox');
+  if (!rec) {
+    tl.innerHTML = '<p style="color:#e8a000;font-size:13px;font-weight:600">⚠️ 请填写登记日或预估登记日，否则无法计算操作时机</p>';
+    // 结果卡片已经显示了，只是没有时间线
+    return;
+  }
+
+  var rd = new Date(rec);
+  var rS = fmtDate(rd);
+  var e5 = fmtDate(new Date(rd.getTime() - 5 * 86400000));
+  var t1 = fmtDate(new Date(rd.getTime() + 86400000));
+  var lE = fmtDate(new Date(rd.getTime() + 21 * 86400000));
+  var eB = isEst ? '<span style="color:#e8a000;font-size:12px">⚠️预测</span>' : '';
+  var dotColor = isEst ? '#e8a000' : '#1a73e8';
+
+  tl.innerHTML =
+    (isEst ? '<div style="color:#e8a000;font-weight:600;font-size:13px;margin-bottom:8px">⚠️ 预案预测模式，登记日尚未公告</div>' : '') +
+    '<div style="position:relative;padding-left:24px">' +
+    '<div style="position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:#1a73e8;opacity:.3"></div>' +
+
+    '<div style="position:relative;margin-bottom:16px">' +
+    '<div style="position:absolute;left:-24px;top:4px;width:12px;height:12px;background:' + dotColor + ';border-radius:50%;border:2px solid white;box-shadow:0 0 0 2px ' + dotColor + '"></div>' +
+    '<h4 style="font-size:14px;font-weight:600">抢权窗口（' + e5 + ' ~ ' + rS + ')' + eB + '</h4>' +
+    '<p style="font-size:13px;color:#5f6368;margin-top:2px">逐步建仓。正股可能因抢权资金上涨。</p>' +
+    '<p style="font-size:12px;color:#1a73e8;margin-top:4px">💡 分批买入，T-2或T-3日完成建仓</p>' +
+    '</div>' +
+
+    '<div style="position:relative;margin-bottom:16px">' +
+    '<div style="position:absolute;left:-24px;top:4px;width:12px;height:12px;background:' + dotColor + ';border-radius:50%;border:2px solid white;box-shadow:0 0 0 2px ' + dotColor + '"></div>' +
+    '<h4 style="font-size:14px;font-weight:600">股权登记日（' + rS + ')' + eB + '</h4>' +
+    '<p style="font-size:13px;color:#5f6368;margin-top:2px">收盘必须持仓。当晚清算获配债权。</p>' +
+    '<p style="font-size:12px;color:#1a73e8;margin-top:4px">💡 持仓过夜，确保配债权</p>' +
+    '</div>' +
+
+    '<div style="position:relative;margin-bottom:16px">' +
+    '<div style="position:absolute;left:-24px;top:4px;width:12px;height:12px;background:' + dotColor + ';border-radius:50%;border:2px solid white;box-shadow:0 0 0 2px ' + dotColor + '"></div>' +
+    '<h4 style="font-size:14px;font-weight:600">除权日（' + t1 + ')' + eB + '</h4>' +
+    '<p style="font-size:13px;color:#5f6368;margin-top:2px">已获配债权，正股可卖出。通常有抛压。</p>' +
+    '<p style="font-size:12px;color:#1a73e8;margin-top:4px">💡 卖出正股 + 申购/缴款转债</p>' +
+    '</div>' +
+
+    '<div style="position:relative;margin-bottom:16px">' +
+    '<div style="position:absolute;left:-24px;top:4px;width:12px;height:12px;background:' + dotColor + ';border-radius:50%;border:2px solid white;box-shadow:0 0 0 2px ' + dotColor + '"></div>' +
+    '<h4 style="font-size:14px;font-weight:600">转债上市日（预计 ' + lE + ')' + eB + '</h4>' +
+    '<p style="font-size:13px;color:#5f6368;margin-top:2px">申购后2~4周上市。首日卖出转债完成闭环。</p>' +
+    '<p style="font-size:12px;color:#1a73e8;margin-top:4px">💡 首日集合竞价或开盘卖出</p>' +
+    '</div>' +
+
+    '</div>';
+}
+
+// ═════════════════════════════════════
+// 事件绑定（不依赖onclick内联，更可靠）
+// ═════════════════════════════════════
+document.getElementById('calcBtn').addEventListener('click', calc);
+document.getElementById('refreshBtn').addEventListener('click', function() { renderWL(); });
+document.getElementById('flowBtn').addEventListener('click', function() {
+  var c = document.getElementById('flowCd');
+  c.style.display = c.style.display === 'none' ? '' : 'none';
+});
+
+// ═════════════════════════════════════
+// 初始化
+// ═════════════════════════════════════
+renderWL();
+calc();
+</script>
+</body>
+</html>
