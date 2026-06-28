@@ -50,7 +50,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 </style>
 </head>
 <body>
-<div class="hdr"><h1>⚡ 抢权配债策略工具 v5.0</h1><p>最低配1手 · 保守/激进对比 · 取整进位 · 注册日期 · 置顶标红</p></div>
+<div class="hdr"><h1>⚡ 抢权配债策略工具 v5.0</h1><p>最低配1手 · 保守/激进对比 · 取整进位 · 注册日期 · 置顶标红 · 增量CSV</p><p id="hdrTime" style="font-size:12px;opacity:.7;margin-top:2px"></p></div>
 <div class="ctn"><div class="g2">
 
 <!-- ═══ 左侧 ═══ -->
@@ -78,7 +78,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 
 <div class="cd">
 <h2>📌 待发转债（点击选入）</h2>
-<div style="font-size:12px;color:#9aa0a6;margin-bottom:8px">数据: 集思录 2026-06-28 · 共39只 · 🔴=即将操作置顶</div>
+<div style="font-size:12px;color:#9aa0a6;margin-bottom:8px" id="wlInfo">数据更新: <span id="wlTime"></span> · 共39只 · 🔴=即将操作置顶 · <span style="color:#e8a000">⚠️正股价为抓取时市价</span></div>
 <div style="overflow-x:auto;max-height:460px;overflow-y:auto">
 <table class="wt" id="wlTbl">
 <thead><tr><th>状态</th><th>正股</th><th>股价</th><th>需股数</th><th>安全垫</th><th>日期</th><th>评级</th></tr></thead>
@@ -122,11 +122,16 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 
 <div class="discl">
 ⚠️ 本工具仅供参考，不构成投资建议。抢权配债有正股下跌风险，转债溢价率不确定。投资需谨慎。<br>
-数据来源: <a href="https://www.jisilu.cn/web/data/cb/pre" target="_blank">集思录待发转债</a>(2026-06-28)。正股价为抓取时市价，请确认最新价格。
+数据来源: <a href="https://www.jisilu.cn/web/data/cb/pre" target="_blank">集思录待发转债</a>。正股价为抓取时市价，请确认最新价格。<br>
+数据更新时间: <span id="disclTime"></span> · 如需更新数据，请联系维护人员重新抓取并部署。
 </div>
 
 <script>
 // ═════════════════════════════════════
+// 数据更新时间（每次重新抓取数据时更新此值）
+// ═════════════════════════════════════
+var DATA_UPDATE_TIME = '2026-06-28 16:00';
+
 // 数据：[代码, 名称, 转债名, 股价, 配10张需股数, 评级, 登记日, 申购日, 同意注册日]
 // ═════════════════════════════════════
 var DATA=[
@@ -891,6 +896,26 @@ function exportCSV() {
 // ═════════════════════════════════════
 // 初始化
 // ═════════════════════════════════════
+
+// 显示数据更新时间
+document.getElementById('hdrTime').textContent = '📅 数据更新: ' + DATA_UPDATE_TIME;
+document.getElementById('wlTime').textContent = DATA_UPDATE_TIME;
+document.getElementById('disclTime').textContent = DATA_UPDATE_TIME;
+
+// 刷新按钮：提示需要手动更新数据
+document.getElementById('refreshBtn').onclick = function() {
+  var daysSinceUpdate = Math.floor((new Date(TODAY) - new Date(DATA_UPDATE_TIME.split(' ')[0])) / 86400000);
+  var msg = '当前数据更新时间: ' + DATA_UPDATE_TIME;
+  if (daysSinceUpdate > 0) {
+    msg += '\n⚠️ 数据已过期 ' + daysSinceUpdate + ' 天';
+    msg += '\n\n本工具数据为静态快照，需维护人员重新从集思录抓取后部署更新。';
+    msg += '\n\n如需更新，请将以下信息反馈给维护人员：';
+    msg += '\n- 需要更新的数据类型（待发转债列表/正股价/登记日等）';
+  } else {
+    msg += '\n✅ 数据为今日更新，无需刷新。';
+  }
+  alert(msg);
+};
 
 // 填充溢价率参考信息
 var premStats = calcPremiumStats();
