@@ -195,8 +195,25 @@ function fmtShortDate(d) {
   return d.slice(5); // "06-26" from "2026-06-26"
 }
 
+// 计算安全垫（沪市用激进版：卡0.5手取整，深市用保守版）
+function calcBestCushion(code, price, shares, premium) {
+  if (price <= 0 || shares <= 0) return 0;
+  var prem = premium || 20;
+  var isSH = code.charAt(0) === '6';
+  var bp1 = 10 * prem;  // 1手转债收益
+  if (isSH) {
+    var aggSh = Math.ceil(shares * 0.5 / 100) * 100;
+    var aggCost = aggSh * price;
+    return (bp1 / aggCost) * 100;
+  } else {
+    var conSh = Math.ceil(shares / 100) * 100;
+    var conCost = conSh * price;
+    return (bp1 / conCost) * 100;
+  }
+}
+
 // ═════════════════════════════════════
-// 关注池渲染（3组：即将操作/已过登记日/预案）
+// 关注池渲染（3组：即将操作/预案/已过登记日）
 // ═════════════════════════════════════
 function renderWL() {
   var tbody = document.getElementById('wlBody');
@@ -219,14 +236,13 @@ function renderWL() {
     }
   }
 
-  // 排序：按安全垫从高到低
-  var sortByCushion = function(a, b) {
-    return calcCushion(b[3], b[4], 20) - calcCushion(a[3], a[4], 20);
+  // 排序：各组内按安全垫（沪市激进版）降序
+  var sortByBestCushion = function(a, b) {
+    return calcBestCushion(b[0], b[3], b[4], 20) - calcBestCushion(a[0], a[3], a[4], 20);
   };
-  upcoming.sort(sortByCushion);
-  past.sort(sortByCushion);
-  // 预案按同意注册日从近到远
-  pending.sort(function(a, b) { return (b[8] || '').localeCompare(a[8] || ''); });
+  upcoming.sort(sortByBestCushion);
+  pending.sort(sortByBestCushion);
+  past.sort(sortByBestCushion);
 
   var html = '';
 
@@ -235,58 +251,60 @@ function renderWL() {
     html += '<tr><td colspan="7" style="background:#ea4335;color:#fff;font-weight:700;font-size:12px;padding:5px 6px">🔴 即将操作（已发公告，登记日未到）</td></tr>';
     for (var j = 0; j < upcoming.length; j++) {
       var dd = upcoming[j];
-      var cc = calcCushion(dd[3], dd[4], 20);
+      var cc = calcBestCushion(dd[0], dd[3], dd[4], 20);
+      var isSH_dd = dd[0].charAt(0) === '6';
       html += '<tr class="tr-hot" onclick="loadD(\'' + dd[0] + '\')">';
       html += '<td><span class="seg-red">抢</span></td>';
-      html += '<td>' + dd[1] + '</td>';
+      html += '<td>' + dd[1] + (isSH_dd ? ' <span style="font-size:10px;color:#e8a000">⚡</span>' : '') + '</td>';
       html += '<td>' + dd[3].toFixed(2) + '</td>';
       html += '<td>' + dd[4] + '</td>';
-      html += '<td style="color:#ea4335;font-weight:700">' + cc.toFixed(2) + '%</td>';
+      html += '<td style="color:#ea4335;font-weight:700">' + cc.toFixed(2) + '%' + (isSH_dd ? '<sup style="font-size:9px">激</sup>' : '') + '</td>';
       html += '<td>' + fmtShortDate(dd[8]) + '</td>';
       html += '<td>' + dd[5] + '</td>';
       html += '</tr>';
     }
   }
 
-  // ⚡ 第2组：已过登记日
-  if (past.length > 0) {
-    html += '<tr><td colspan="7" style="background:#e8f0fe;font-weight:600;font-size:12px;color:#1a73e8;padding:5px 6px">⚡ 已过登记日（可回测）</td></tr>';
-    for (var k = 0; k < past.length; k++) {
-      var ddd = past[k];
-      var ccc = calcCushion(ddd[3], ddd[4], 20);
-      var clr = ccc >= 5 ? '#34a853' : ccc >= 3 ? '#e8a000' : ccc >= 1.5 ? '#ea4335' : '#9aa0a6';
-      html += '<tr onclick="loadD(\'' + ddd[0] + '\')" style="cursor:pointer">';
-      html += '<td><span class="seg-blue">过</span></td>';
-      html += '<td>' + ddd[1] + '</td>';
-      html += '<td>' + ddd[3].toFixed(2) + '</td>';
-      html += '<td>' + ddd[4] + '</td>';
-      html += '<td style="color:' + clr + ';font-weight:700">' + ccc.toFixed(2) + '%</td>';
-      html += '<td>' + fmtShortDate(ddd[8]) + '</td>';
-      html += '<td>' + ddd[5] + '</td>';
-      html += '</tr>';
-    }
-  }
-
-  // 📋 第3组：预案（近期注册标红）
+  // 📋 第2组：预案（按安全垫降序，近期注册标红）
   if (pending.length > 0) {
     html += '<tr><td colspan="7" style="background:#f1f3f4;font-weight:600;font-size:12px;color:#5f6368;padding:5px 6px">📋 预案（同意注册，待发公告）</td></tr>';
     for (var m = 0; m < pending.length; m++) {
       var p = pending[m];
-      var pc = calcCushion(p[3], p[4], 20);
+      var pc = calcBestCushion(p[0], p[3], p[4], 20);
       var pclr = pc >= 5 ? '#34a853' : pc >= 3 ? '#e8a000' : pc >= 1.5 ? '#ea4335' : '#9aa0a6';
-      // 注册日在近7天内(06-21之后)的标红
+      var isSH_p = p[0].charAt(0) === '6';
       var regDate = p[8] || '';
       var isRecent = regDate >= '2026-06-21';
       var rowClass = isRecent ? 'tr-hot' : '';
       var rowStyle = isRecent ? '' : 'opacity:.85';
       html += '<tr class="' + rowClass + '" onclick="loadD(\'' + p[0] + '\')" style="cursor:pointer;' + rowStyle + '">';
       html += '<td>' + (isRecent ? '<span class="seg-red">近</span>' : '<span class="seg-gray">待</span>') + '</td>';
-      html += '<td>' + p[1] + (isRecent ? ' 🔥' : '') + '</td>';
+      html += '<td>' + p[1] + (isRecent ? ' 🔥' : '') + (isSH_p ? ' <span style="font-size:10px;color:#e8a000">⚡</span>' : '') + '</td>';
       html += '<td>' + p[3].toFixed(2) + '</td>';
       html += '<td>' + p[4] + '</td>';
-      html += '<td style="color:' + pclr + ';font-weight:700">' + pc.toFixed(2) + '%</td>';
+      html += '<td style="color:' + pclr + ';font-weight:700">' + pc.toFixed(2) + '%' + (isSH_p ? '<sup style="font-size:9px">激</sup>' : '') + '</td>';
       html += '<td style="color:' + (isRecent ? '#ea4335' : '#5f6368') + ';font-weight:' + (isRecent ? '700' : '400') + '">' + fmtShortDate(regDate) + '</td>';
       html += '<td>' + p[5] + '</td>';
+      html += '</tr>';
+    }
+  }
+
+  // ⚡ 第3组：已过登记日
+  if (past.length > 0) {
+    html += '<tr><td colspan="7" style="background:#e8f0fe;font-weight:600;font-size:12px;color:#1a73e8;padding:5px 6px">⚡ 已过登记日（可回测）</td></tr>';
+    for (var k = 0; k < past.length; k++) {
+      var ddd = past[k];
+      var ccc = calcBestCushion(ddd[0], ddd[3], ddd[4], 20);
+      var clr = ccc >= 5 ? '#34a853' : ccc >= 3 ? '#e8a000' : ccc >= 1.5 ? '#ea4335' : '#9aa0a6';
+      var isSH_ddd = ddd[0].charAt(0) === '6';
+      html += '<tr onclick="loadD(\'' + ddd[0] + '\')" style="cursor:pointer">';
+      html += '<td><span class="seg-blue">过</span></td>';
+      html += '<td>' + ddd[1] + (isSH_ddd ? ' <span style="font-size:10px;color:#e8a000">⚡</span>' : '') + '</td>';
+      html += '<td>' + ddd[3].toFixed(2) + '</td>';
+      html += '<td>' + ddd[4] + '</td>';
+      html += '<td style="color:' + clr + ';font-weight:700">' + ccc.toFixed(2) + '%' + (isSH_ddd ? '<sup style="font-size:9px">激</sup>' : '') + '</td>';
+      html += '<td>' + fmtShortDate(ddd[8]) + '</td>';
+      html += '<td>' + ddd[5] + '</td>';
       html += '</tr>';
     }
   }
