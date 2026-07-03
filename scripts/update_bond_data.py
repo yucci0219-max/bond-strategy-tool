@@ -303,7 +303,7 @@ def calc_first_day_premium(bond_code, bond_name, list_date):
     first_close = float(first_line[2])
 
     return {
-        'date': f'{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}',
+        'date': date_str,  # K线日期已是 YYYY-MM-DD 格式
         'name': bond_name,
         'close': round(first_close - 100, 2),
     }
