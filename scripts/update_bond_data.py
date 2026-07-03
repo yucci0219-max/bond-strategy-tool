@@ -517,7 +517,10 @@ def update_html_files(data=None, backtest=None, listed_premium=None):
 # ═══════════════════════════════════════════════════
 
 def save_snapshot(name, data):
-    """保存降级快照到data目录"""
+    """保存降级快照到data目录。只有数据有效（非空）时才保存，避免覆盖旧快照"""
+    if not data or (isinstance(data, (list, dict)) and len(data) == 0):
+        log.warning(f'快照 {name} 数据为空，跳过保存（保留旧快照）')
+        return
     os.makedirs(DATA_DIR, exist_ok=True)
     path = os.path.join(DATA_DIR, f'last_{name}.json')
     with open(path, 'w', encoding='utf-8') as f:
@@ -580,7 +583,11 @@ def main():
     if data:  # 只有DATA可用时才尝试回测
         try:
             backtest = build_backtest(data)
-            save_snapshot('backtest', backtest)
+            if backtest and len(backtest) > 0:
+                save_snapshot('backtest', backtest)
+            else:
+                log.warning('回测数据为空，尝试加载快照')
+                backtest = load_snapshot('backtest') or backtest
         except Exception as e:
             log.error(f'回测数据构建失败: {e}')
             errors.append(f'回测: {e}')
@@ -590,7 +597,11 @@ def main():
     listed_premium = None
     try:
         listed_premium = build_listed_premium()
-        save_snapshot('listed_premium', listed_premium)
+        if listed_premium and len(listed_premium) > 0:
+            save_snapshot('listed_premium', listed_premium)
+        else:
+            log.warning('上市溢价数据为空，尝试加载快照')
+            listed_premium = load_snapshot('listed_premium') or listed_premium
     except Exception as e:
         log.error(f'上市溢价抓取失败: {e}')
         errors.append(f'上市溢价: {e}')
