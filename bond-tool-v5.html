@@ -130,7 +130,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 // ═════════════════════════════════════
 // 数据更新时间（每次重新抓取数据时更新此值）
 // ═════════════════════════════════════
-var DATA_UPDATE_TIME = '2026-07-03 08:10';
+var DATA_UPDATE_TIME = '2026-07-03 08:17';
 // 数据：[代码, 名称, 转债名, 股价, 配10张需股数, 评级, 登记日, 申购日, 同意注册日]
 // ═════════════════════════════════════
 var DATA = [// 已公布登记日（登记日已过）- 14只
@@ -180,7 +180,7 @@ var DATA = [// 已公布登记日（登记日已过）- 14只
 ['300697','电工合金','待定',14.76,795,'-','','','']];
 // 已过登记日股票的次日实际行情回测数据（东方财富历史K线）
 // openPct=次日开盘涨幅, lowPct=次日最低涨幅, closePct=次日收盘涨幅（均相对登记日收盘）
-var BACKTEST = {};
+var BACKTEST = {'603129':{openPct:-2.73,lowPct:-5.62,closePct:-5.0},'603112':{openPct:-7.58,lowPct:-10.0,closePct:-10.0},'301059':{openPct:-10.33,lowPct:-12.86,closePct:-12.38},'000422':{openPct:-7.51,lowPct:-8.0,closePct:-7.79},'301499':{openPct:-10.26,lowPct:-13.9,closePct:-12.32},'605589':{openPct:-1.72,lowPct:-4.57,closePct:10.0},'688668':{openPct:-2.75,lowPct:-2.75,closePct:-0.47},'600456':{openPct:-9.22,lowPct:-9.85,closePct:-8.17},'688200':{openPct:-0.71,lowPct:-0.71,closePct:3.98}};
 // 近月上市转债首日涨幅数据（东方财富K线，2026年上市）
 // 用于估算待发转债的上市溢价率
 var LISTED_PREMIUM = [];
