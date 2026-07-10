@@ -1,45 +1,40 @@
 {
-  "update_time": "2026-07-08 19:53",
+  "update_time": "2026-07-10 10:39",
   "data": {
-    "301499": {
-      "openPct": -10.26,
-      "lowPct": -13.9,
-      "closePct": -12.32
-    },
-    "688484": {
-      "openPct": -2.26,
-      "lowPct": -2.47,
-      "closePct": -0.41
-    },
-    "603270": {
-      "openPct": -6.61,
-      "lowPct": -6.71,
-      "closePct": -0.52
-    },
     "603809": {
       "openPct": -7.52,
       "lowPct": -7.52,
       "closePct": -4.67
     },
-    "688092": {
-      "openPct": -14.21,
-      "lowPct": -19.71,
-      "closePct": -17.14
+    "301000": {
+      "openPct": -6.75,
+      "lowPct": -14.7,
+      "closePct": -11.82
     },
     "603786": {
       "openPct": -5.07,
       "lowPct": -5.07,
       "closePct": 2.0
     },
-    "000422": {
-      "openPct": -7.51,
-      "lowPct": -8.0,
-      "closePct": -7.79
-    },
     "605589": {
       "openPct": -1.72,
       "lowPct": -4.57,
       "closePct": 10.0
+    },
+    "688668": {
+      "openPct": -2.75,
+      "lowPct": -2.75,
+      "closePct": -0.47
+    },
+    "600456": {
+      "openPct": -9.22,
+      "lowPct": -9.85,
+      "closePct": -8.17
+    },
+    "688200": {
+      "openPct": -0.71,
+      "lowPct": -0.71,
+      "closePct": 3.98
     }
   }
 }
