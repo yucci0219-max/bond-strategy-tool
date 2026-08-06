@@ -1,25 +1,30 @@
 {
-  "update_time": "2026-08-04 09:32",
+  "update_time": "2026-08-06 11:29",
   "data": {
     "603019": {
       "openPct": -2.85,
       "lowPct": -6.1,
       "closePct": -5.04
     },
-    "600389": {
-      "openPct": -6.38,
-      "lowPct": -9.89,
-      "closePct": -6.06
+    "605123": {
+      "openPct": -7.6,
+      "lowPct": -7.63,
+      "closePct": -6.05
     },
-    "300631": {
-      "openPct": -12.24,
-      "lowPct": -16.95,
-      "closePct": -16.45
+    "688605": {
+      "openPct": -4.6,
+      "lowPct": -4.88,
+      "closePct": 0.32
+    },
+    "301565": {
+      "openPct": -6.27,
+      "lowPct": -6.41,
+      "closePct": -5.22
     },
     "300453": {
       "openPct": -4.99,
       "lowPct": -5.4,
-      "closePct": -3.87
+      "closePct": -2.24
     },
     "301626": {
       "openPct": -0.93,
