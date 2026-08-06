@@ -1,10 +1,40 @@
 {
-  "update_time": "2026-07-29 19:03",
+  "update_time": "2026-08-04 09:32",
   "data": {
-    "603786": {
-      "openPct": -5.07,
-      "lowPct": -5.07,
-      "closePct": 2.0
+    "603019": {
+      "openPct": -2.85,
+      "lowPct": -6.1,
+      "closePct": -5.04
+    },
+    "600389": {
+      "openPct": -6.38,
+      "lowPct": -9.89,
+      "closePct": -6.06
+    },
+    "300631": {
+      "openPct": -12.24,
+      "lowPct": -16.95,
+      "closePct": -16.45
+    },
+    "300453": {
+      "openPct": -4.99,
+      "lowPct": -5.4,
+      "closePct": -3.87
+    },
+    "301626": {
+      "openPct": -0.93,
+      "lowPct": -10.22,
+      "closePct": -8.67
+    },
+    "300697": {
+      "openPct": -5.47,
+      "lowPct": -6.94,
+      "closePct": -5.24
+    },
+    "603067": {
+      "openPct": -4.61,
+      "lowPct": -10.01,
+      "closePct": -10.01
     },
     "688686": {
       "openPct": -4.2,
@@ -31,25 +61,10 @@
       "lowPct": -5.54,
       "closePct": -5.43
     },
-    "300631": {
-      "openPct": -12.24,
-      "lowPct": -16.95,
-      "closePct": -16.45
-    },
     "688480": {
       "openPct": -5.1,
       "lowPct": -12.09,
       "closePct": -11.91
-    },
-    "603019": {
-      "openPct": -2.85,
-      "lowPct": -6.1,
-      "closePct": -5.04
-    },
-    "600389": {
-      "openPct": -6.38,
-      "lowPct": -9.89,
-      "closePct": -6.06
     }
   }
 }
