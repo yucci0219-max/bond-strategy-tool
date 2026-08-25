@@ -1,5 +1,5 @@
 {
-  "update_time": "2026-08-24 10:22",
+  "update_time": "2026-08-25 10:18",
   "data": {
     "688605": {
       "openPct": -4.6,
@@ -11,25 +11,10 @@
       "lowPct": -7.63,
       "closePct": -5.26
     },
-    "301565": {
-      "openPct": -6.27,
-      "lowPct": -6.41,
-      "closePct": -4.83
-    },
     "301628": {
       "openPct": -7.14,
       "lowPct": -7.99,
       "closePct": -7.71
-    },
-    "301459": {
-      "openPct": -11.59,
-      "lowPct": -12.1,
-      "closePct": -12.05
-    },
-    "300953": {
-      "openPct": -3.55,
-      "lowPct": -4.26,
-      "closePct": 2.55
     }
   }
 }
