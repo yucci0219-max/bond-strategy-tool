@@ -1,20 +1,15 @@
 {
-  "update_time": "2026-09-29 14:39",
+  "update_time": "2026-09-30 14:22",
   "data": {
-    "300727": {
-      "openPct": -6.84,
-      "lowPct": -6.99,
-      "closePct": -4.46
-    },
     "301149": {
       "openPct": -12.38,
       "lowPct": -12.85,
-      "closePct": -7.48
+      "closePct": -7.59
     },
     "688150": {
       "openPct": -4.01,
       "lowPct": -4.13,
-      "closePct": -0.2
+      "closePct": -0.58
     },
     "603125": {
       "openPct": -6.14,
