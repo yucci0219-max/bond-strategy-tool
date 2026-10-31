@@ -1,6 +1,16 @@
 {
-  "update_time": "2026-10-30 14:52",
+  "update_time": "2026-10-31 14:45",
   "data": {
+    "301018": {
+      "openPct": -1.79,
+      "lowPct": -3.66,
+      "closePct": -0.43
+    },
+    "001380": {
+      "openPct": -9.77,
+      "lowPct": -10.01,
+      "closePct": -10.01
+    },
     "301175": {
       "openPct": -3.17,
       "lowPct": -3.91,
@@ -25,16 +35,6 @@
       "openPct": -3.43,
       "lowPct": -5.47,
       "closePct": -4.25
-    },
-    "301018": {
-      "openPct": -1.79,
-      "lowPct": -3.66,
-      "closePct": -0.43
-    },
-    "001380": {
-      "openPct": -9.77,
-      "lowPct": -10.01,
-      "closePct": -10.01
     }
   }
 }
